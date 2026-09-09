@@ -1,0 +1,143 @@
+# Fuente única de verdad del modelo de datos MVP (Sandbox, Colombia).
+#
+# Estándar: diagram-as-code gestionado.
+#   - Este archivo es la ÚNICA fuente de la que se generan:
+#     * docs/02-data/data-model-er.drawio        (diagrama editable en draw.io)
+#     * diagrama erDiagram embebido en data-model-mvp.md
+#   - Prohibido editar a mano los artefactos generados: edite este archivo,
+#     ejecute `python tools/er-diagram/generate.py` y valide con el job `diagram` de CI.
+#   - Convenciones de notación (crow's foot):
+#     * Relaciones: (1 — N) o (1 — 1); la entidad origen tiene exactamente 1.
+#     * claves: PK (primaria), FK (foránea), UQ (única).
+#     * Nombres de entidad en UPPER_SNAKE; atributos en camelCase.
+#
+# Estructura del archivo:
+#   version:   semver de la fuente (incrementar en cada cambio de modelo).
+#   entities:  mapa id -> {color, stroke, attrs: [[nombre, tipo, flags], ...]}
+#   relations: {src, tgt, label, srcCard, tgtCard}  (src/tgt = ids de entidad).
+name: AgroCortex
+version: 1.0.0
+notation: crow's foot
+
+entities:
+  AGRICULTOR:
+    color: "#1a73e8"
+    stroke: "#0d47a1"
+    attrs:
+      - [id, uuid, "PK"]
+      - [nombre, text, ""]
+      - [apellido, text, ""]
+      - [telefono, text, "UQ"]
+      - [email, text, "UQ · opt."]
+      - [passwordHash, text, "hash"]
+      - [estado, enum, "activo|inactivo"]
+  PARCELA:
+    color: "#f9a825"
+    stroke: "#c77700"
+    attrs:
+      - [id, uuid, "PK"]
+      - [agricultorId, fk, "FK"]
+      - [nombre, text, ""]
+      - [areaHectareas, numeric, ""]
+      - [altitudM, numeric, "msnm"]
+      - [municipioDane, text(5), ""]
+      - [departamentoDane, text(2), ""]
+      - [tipoSuelo, enum, "opt."]
+      - [fechaRegistro, timestamp, ""]
+  CULTIVO:
+    color: "#43a047"
+    stroke: "#1b5e20"
+    attrs:
+      - [id, uuid, "PK"]
+      - [parcelaId, fk, "FK"]
+      - [tipo, text, "café, papa…"]
+      - [variedad, text, "opt."]
+      - [fechaSiembra, date, ""]
+      - [estado, enum, "fenológico"]
+  CONSULTA:
+    color: "#00897b"
+    stroke: "#004d40"
+    attrs:
+      - [id, uuid, "PK"]
+      - [agricultorId, fk, "FK"]
+      - [cultivoId, fk, "FK"]
+      - [descripcionLibre, text, ""]
+      - [estado, enum, "5 estados"]
+      - [creadoEn, timestamp, ""]
+  EVIDENCIA:
+    color: "#5e35b1"
+    stroke: "#311b92"
+    attrs:
+      - [id, uuid, "PK"]
+      - [consultaId, fk, "FK"]
+      - [tipoArchivo, enum, "img|video|audio|doc"]
+      - [url, text, "storage"]
+      - [latitudGps, numeric, "opt."]
+      - [longitudGps, numeric, "opt."]
+      - [fechaCaptura, timestamp, "opt."]
+  SESION:
+    color: "#ad1457"
+    stroke: "#880e4f"
+    attrs:
+      - [id, uuid, "PK"]
+      - [consultaId, fk, "FK · UQ"]
+      - [estado, enum, "abierta|cerrada"]
+      - [cerradoEn, timestamp, "opt."]
+  MENSAJE:
+    color: "#6d4c41"
+    stroke: "#3e2723"
+    attrs:
+      - [id, uuid, "PK"]
+      - [sesionId, fk, "FK"]
+      - [autor, enum, "agricultor|motor-ia"]
+      - [tipo, enum, "texto|img|sel|conf"]
+      - [contenido, jsonb, ""]
+      - [orden, int, "UQ"]
+      - [enviadoEn, timestamp, ""]
+  DIAGNOSTICO:
+    color: "#c62828"
+    stroke: "#8e0000"
+    attrs:
+      - [id, uuid, "PK"]
+      - [consultaId, fk, "FK · UQ"]
+      - [resumen, text, ""]
+      - [nivelConfianza, numeric, "0.00–1.00"]
+      - [estado, enum, "4 estados"]
+      - [creadoEn, timestamp, ""]
+  HIPOTESIS:
+    color: "#455a64"
+    stroke: "#263238"
+    attrs:
+      - [id, uuid, "PK"]
+      - [diagnosticoId, fk, "FK"]
+      - [nombre, text, ""]
+      - [tipoCausa, enum, ""]
+      - [probabilidad, numeric, "0.00–1.00"]
+      - [comoDiferenciar, text, "opt."]
+  RECOMENDACION:
+    color: "#689f38"
+    stroke: "#33691e"
+    attrs:
+      - [id, uuid, "PK"]
+      - [diagnosticoId, fk, "FK"]
+      - [tipo, enum, "5 tipos"]
+      - [titulo, text, ""]
+      - [detalle, text, ""]
+      - [riesgo, enum, "opt."]
+      - [requiereValidacion, bool, ""]
+      - [estadoValidacion, enum, "validación"]
+      - [validador, text, "opt."]
+      - [observaciones, text, "opt."]
+      - [validadoEn, timestamp, "opt."]
+
+relations:
+  - {src: AGRICULTOR, tgt: PARCELA, label: tiene, srcCard: "1", tgtCard: "N"}
+  - {src: PARCELA, tgt: CULTIVO, label: contiene, srcCard: "1", tgtCard: "N"}
+  - {src: AGRICULTOR, tgt: CONSULTA, label: hace, srcCard: "1", tgtCard: "N"}
+  - {src: CULTIVO, tgt: CONSULTA, label: genera, srcCard: "1", tgtCard: "N"}
+  - {src: CONSULTA, tgt: EVIDENCIA, label: lleva, srcCard: "1", tgtCard: "N"}
+  - {src: CONSULTA, tgt: SESION, label: tiene, srcCard: "1", tgtCard: "1"}
+  - {src: SESION, tgt: MENSAJE, label: conserva, srcCard: "1", tgtCard: "N"}
+  - {src: CONSULTA, tgt: DIAGNOSTICO, label: genera, srcCard: "1", tgtCard: "1"}
+  - {src: DIAGNOSTICO, tgt: HIPOTESIS, label: propone, srcCard: "1", tgtCard: "N"}
+  - {src: DIAGNOSTICO, tgt: RECOMENDACION, label: deriva, srcCard: "1", tgtCard: "N"}
