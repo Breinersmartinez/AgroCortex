@@ -1,0 +1,18 @@
+# Artefactos de Maven y directorios de construcción
+target/
+
+# Credenciales: NUNCA copiar secretos a la imagen
+.env
+*.env
+
+# Control de versiones
+.git/
+.gitignore
+.github/
+
+# IDE
+.idea/
+*.iml
+
+# Logs
+*.log
