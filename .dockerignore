@@ -1,0 +1,29 @@
+# Build (Maven)
+target/
+**/target/
+
+# Credenciales
+.env
+*.env
+
+# Control de versiones
+.git/
+.gitignore
+.github/
+
+# IDE
+.idea/
+*.iml
+
+# Frontend (no se copia al build de Docker)
+frontend/
+node_modules/
+
+# Logs
+*.log
+
+# Documentación
+docs/
+k8s/
+monitoring/
+db/

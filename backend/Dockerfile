@@ -1,37 +1,23 @@
 # Stage 1: Build the application
-FROM eclipse-temurin:17-jdk AS builder
+FROM maven:3.9-eclipse-temurin-17 AS builder
 
-# Set the working directory
 WORKDIR /app
 
+COPY backend/pom.xml pom.xml
+COPY backend/src/ src/
+COPY backend/.mvn/ .mvn/
 
-# Copia el resto del código de la aplicación
-COPY mvnw mvnw
-COPY .mvn/ .mvn/
-COPY pom.xml pom.xml
-COPY src/ src/
-
-# Da permisos de ejecución al wrapper (por si acaso)
-RUN chmod +x mvnw
-
-# Se empaqueta la aplicación sin ejecutar tests
-RUN ./mvnw clean package -DskipTests
+RUN mvn clean package -DskipTests
 
 # Stage 2: Run the application
 FROM eclipse-temurin:17-jre
 
-# Set the working directory
 WORKDIR /app
 
-# Instala curl para los healthchecks del docker-compose
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
-# Copia el .jar generado
 COPY --from=builder /app/target/*.jar app.jar
 
-# Expone el puerto
 EXPOSE 8080
 
-# Comando para ejecutar el .jar
 ENTRYPOINT ["java", "-jar", "app.jar"]
-
