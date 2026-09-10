@@ -1,8 +1,8 @@
-# Clean Architecture + Vertical Slicing
+# Clean Architecture
 
 ## Architectural decision
 
-AgroCortex uses a modular monolith organized by business capabilities (vertical slices) while enforcing Clean Architecture dependency rules.
+AgroCortex enforces Clean Architecture dependency rules within a modular Spring Boot monolith.
 
 The system remains a single Spring Boot deployment. Infrastructure details such as Spring MVC, JPA, PostgreSQL, JWT and external AI providers are adapters and are not part of the domain model.
 
@@ -23,9 +23,9 @@ Infrastructure -----> Domain
 
 Dependencies must point toward the business rules. Domain code must not depend on Spring, JPA, HTTP, JWT libraries or external AI SDKs.
 
-## Vertical slices
+## Business capabilities
 
-The primary slices are based on business capabilities rather than technical layers:
+The system is organized by business capabilities:
 
 - `auth`: authentication, identity and access control
 - `farmers`: farmer management
@@ -37,7 +37,7 @@ The primary slices are based on business capabilities rather than technical laye
 - `diagnoses`: probabilistic diagnosis and hypotheses
 - `recommendations`: recommendations and human validation
 
-Each slice owns its application use cases and domain rules. Cross-cutting infrastructure is kept outside the slices.
+Each capability owns its application use cases and domain rules. Cross-cutting infrastructure is kept outside the capabilities.
 
 ## RBAC authorization model
 
@@ -67,7 +67,7 @@ DIAGNOSES_VALIDATE
 
 Roles use the `ROLE_` prefix so standard Spring role checks remain available. Fine-grained permissions use their own authority names and are the preferred mechanism for module authorization.
 
-Controllers in vertical slices should express authorization close to the endpoint, for example:
+Controllers should express authorization close to the endpoint, for example:
 
 ```java
 @PreAuthorize("hasAuthority('DIAGNOSES_VALIDATE')")
@@ -188,4 +188,3 @@ The database model does not automatically define the domain aggregate structure.
 9. RBAC does not replace object-level checks such as farmer ownership of a `Sembradio` or `Consulta`.
 10. Integration tests verify infrastructure adapters; unit tests focus on domain/use-case behavior.
 11. Database schema changes must be versioned with migrations before production.
-12. New features should be added as vertical slices instead of creating global technical-layer folders.
