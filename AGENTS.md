@@ -32,4 +32,5 @@
 - PostgreSQL local: hoy se conecta a **Neon** vía env vars ya configuradas en el entorno de dev; falta decidir/implementar docker-compose para dev y/o H2 (JUnit) para pruebas — ¿cuál conviene más?
 - `npm run lint` está roto: falta instalar y configurar `@angular-eslint`.
 - BD de prod en Heroku: hace falta poner las vars `PG*` en `heroku config` (hoy el app arranca sin BD porque no hay entidades; con el MVP se caerá).
-- Vercel: faltan los secrets `VERCEL_TOKEN`/`VERCEL_ORG_ID`/`VERCEL_PROJECT_ID` para que el job `Frontend → Vercel` pase.
+- Vercel: faltan los secrets `VERCEL_TOKEN`/`VERCEL_ORG_ID`/`VERCEL_PROJECT_ID` para que el job `Frontend → Vercel` pase. (Existe ya un proyecto Vercel `agro-cortex` conectado vía integración que despliega previews por su cuenta.)
+- `Dependency Review (SCA)` falla en los PRs: hay que habilitar **Dependency graph** en Settings → Code security and analysis (no se puede por API; no es required check, no bloquea merge).
