@@ -15,22 +15,20 @@ Portal de documentación técnica del proyecto. Organizada por categorías funci
 
 | Documento | Qué es | Relacionado con |
 |---|---|---|
-| [data-model-mvp.md](02-data/data-model-mvp.md) | Modelo de entidades MVP: espina dorsal relacional **Agricultor → Parcela → Cultivo → Consulta → Sesión → Mensaje** + diagnóstico/recomendación | Análisis agrícola (01) |
-| [er/model.yaml](02-data/er/model.yaml) | Fuente única de verdad del modelo (diagram-as-code): entidades, atributos, relaciones, versión | Modelo de datos MVP (02), tool ER diagram (engineering) |
-| [data-model-er.drawio](02-data/data-model-er.drawio) | Diagrama entidad-relación **generado** desde `er/model.yaml` (abrir en draw.io). No editar a mano | Modelo de datos MVP (02) |
+| [data-model-mvp.md](02-data/data-model-mvp.md) | Modelo de entidades MVP: espina dorsal relacional **Agricultor → Sembradio → Cultivo → Consulta → Sesión → Mensaje** + diagnóstico/recomendación | Análisis agrícola (01) |
+| [data-model-er.drawio](02-data/data-model-er.drawio) | Diagrama entidad-relación del MVP (editar en draw.io) | Modelo de datos MVP (02) |
 
 ### 03 — Engineering
 
 | Documento | Qué es | Relacionado con |
 |---|---|---|
 | [github-actions-workflows.md](03-engineering/github-actions-workflows.md) | Cómo se construyeron los workflows de GitHub Actions: decisiones, alternativas descartadas, verificaciones | CI/CD (04) |
-| [tools/er-diagram/README.md](../tools/er-diagram/README.md) | Estándar diagram-as-code del diagrama ER: fuente única (`er/model.yaml`), generador, validación | Modelo de datos (02), CI (04) |
 
 ### 04 — Operations
 
 | Documento | Qué es | Relacionado con |
 |---|---|---|
-| [deployment.md](04-operations/deployment.md) | Despliegue manual: Heroku (Container Registry) y Vercel, con troubleshooting | CI/CD (04) |
+| [deployment.md](04-operations/deployment.md) | Despliegue manual: Heroku (`heroku.yml` + git push) y Vercel, con troubleshooting | CI/CD (04) |
 | [ci-cd.md](04-operations/ci-cd.md) | Pipeline automatizado CI/CD: workflows, secretos, environments, branch protection | Workflows (03) · Deployment (04) |
 
 ### 05 — Security

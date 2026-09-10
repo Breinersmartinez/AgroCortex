@@ -15,20 +15,30 @@ Cada una se despliega por su cuenta, con su propio pipeline y sus propias variab
 
 ### 1.1. Modelo de despliegue
 
-Se usa el **Container Registry de Heroku** (`heroku container:push`), no el `git push`.
+Se usa **`heroku.yml` + `git push heroku main`**, no el `container:push`.
 
-**Contexto / por qué:** Heroku auto-detecta el buildpack buscando `pom.xml` en la raíz del repositorio. En un monorepo el `pom.xml` vive en `backend/`, así que la detección falla (`No default language could be detected`). Las dos alternativas que se probaron y se descartaron:
+**Contexto / por qué:** Heroku auto-detecta el buildpack buscando `pom.xml` en la raíz del repositorio. En un monorepo el `pom.xml` vive en `backend/`, así que la detección falla (`No default language could be detected`). `heroku.yml` resuelve esto declarando el Dockerfile del backend:
 
-1. **`git push heroku main`** — Heroku registra cada versión de código (SHA) que recibe, aunque el build falle. Un commit reintentado dispara `Duplicate Build Version Detected` y el push es rechazado incluso con un commit nuevo. El remote de Heroku queda sin refs (`git ls-remote heroku` vacío) pero el bloqueo persiste a nivel de builds.
-2. **`heroku.yml` + Docker (git push)** — define `build.docker.web: backend/Dockerfile`, pero su presencia interfiere con `container:push` (`Error: No images to push`). Se eliminó.
+```yaml
+build:
+  docker:
+    web: backend/Dockerfile   # el contexto del build es la carpeta del Dockerfile (backend/)
+run:
+  web: java -jar app.jar       # entra en reemplazo del Procfile (que por eso se eliminó)
+```
 
-El camino estable es el Container Registry: no pasa por la detección de versiones de git y permite apuntar a cualquier subdirectorio con `--context-path`.
+La app debe estar en stack `container` (ver requisitos). Alternativas descartadas y documentadas:
+
+1. **Container Registry (`heroku container:push`)** — era el modelo previo; quedó obsoleto al adoptar `heroku.yml` (su presencia rompía el CLI con `No images to push`).
+2. **Buildpacks** — no aplican al monorepo: requieren `pom.xml` en la raíz.
 
 ### 1.2. Requisitos (se configuran una sola vez)
 
 ```bash
 # Stack container (Docker, no buildpacks)
 heroku stack:set container -a agro-cortex
+
+# `heroku.yml` commiteado en la raíz (definido en §1.1)
 
 # No hay buildpacks configurados (verificable con `heroku buildpacks`)
 
@@ -43,22 +53,25 @@ Verificación de stack: `heroku apps:info -a agro-cortex` debe mostrar `Stack: c
 
 ### 1.3. Desplegar
 
+El repo tiene **un solo ambiente**: no hay separación staging/producción. Despliegue automático:
+
+1. Abrir un PR a `main` (la rama está protegida contra push directos).
+2. Cuando `CI`, `Security` y `Qodana` pasan, se mergea → el workflow `Deploy` hace `git push` a Heroku y el build ocurre ahí.
+
+Fallback manual (solo emergencias; el push a Heroku no pasa por la protección de GitHub):
+
 ```bash
 # 1. Verificar el build local (contexto = backend/)
 docker build -f backend/Dockerfile -t agrocortex:test .
 
-# 2. Login en el registry
-heroku container:login
+# 2. Preparar el remote (una sola vez)
+heroku git:remote -a agro-cortex
 
-# 3. Construir y pushear la imagen (desde backend/ — OJO con el cwd)
-cd backend
-heroku container:push web --context-path . -a agro-cortex
-
-# 4. Liberar el release
-heroku container:release web -a agro-cortex
+# 3. Desplegar (el build de Docker ocurre en Heroku)
+git push heroku main
 ```
 
-> **Importante:** `container:push --context-path .` debe ejecutarse con el directorio actual en `backend/`. Si se corre desde la raíz con `--context-path backend`, el CLI falla con `No images to push`.
+> El proceso `web` lo define `heroku.yml` (`java -jar app.jar`); el Procfile ya no existe y no hace falta.
 
 ### 1.4. Verificación
 
@@ -76,7 +89,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://agro-cortex-e8efa9bac1c8.heroku
 
 ### 2.1. Modelo de despliegue
 
-`git push` al repositorio de GitHub; Vercel importa el proyecto desde `frontend/` (root directory) y corre `npm run build`.
+El job `Frontend → Vercel` del workflow `Deploy` construye en el runner (`npm run build`) y sube con `npx vercel deploy --prebuilt --prod`. Vercel no re-compila; sirve `dist/`.
 
 ### 2.2. Configuración
 
@@ -108,9 +121,10 @@ curl -s -o /dev/null -w "%{http_code}\n" https://agro-cortex-e8efa9bac1c8.heroku
 
 ## 3. Monorepo — reglas de oro
 
-- **No mover `pom.xml` a la raíz.** Heroku Java buildpack no entiende subdirectorios; por eso el backend usa Docker + Container Registry y no el buildpack.
-- **`heroku.yml` NO debe existir** en la raíz: rompe `container:push`.
-- **`frontend/` está excluida del contexto Docker** vía `.dockerignore` de la raíz.
+- **`heroku.yml` en la raíz** define el proceso web (`java -jar app.jar`); deja de existir el `Procfile`.
+- **El contexto del build Docker es la carpeta del `Dockerfile`** (`backend/`), no la raíz: el `COPY pom.xml` del Dockerfile funciona aunque el `pom.xml` no esté arriba.
+- **No mover `pom.xml` a la raíz:** el buildpack Java no entiende subdirectorios; el backend va por Docker vía `heroku.yml`, no por buildpack.
+- **`frontend/` está excluida del contexto Docker** vía `.dockerignore` de la raíz (aunque con contexto `backend/` no viaja igualmente).
 - **Cada app tiene su propio `.env`** documentado en `.env.example` (raíz).
 
 ---
@@ -119,7 +133,8 @@ curl -s -o /dev/null -w "%{http_code}\n" https://agro-cortex-e8efa9bac1c8.heroku
 
 | Error | Causa | Solución |
 |---|---|---|
-| `No default language could be detected for this app` | `pom.xml` no está en la raíz | Usar Container Registry (no git push) |
-| `you have triggered a build ... at least twice` | Misma SHA ya registrada en builds de Heroku | Desplegar con `heroku container:push` (nueva imagen) |
-| `No images to push` | `heroku.yml` presente o `--context-path` mal usado | Eliminar `heroku.yml`; correr `--context-path .` desde `backend/` |
+| Build del Dockerfile falla con `COPY failed: ... pom.xml: not found` | Se corrió `docker build` con contexto = raíz | Usar `docker build -f backend/Dockerfile` desde la raíz (contexto correcto) o `cd backend && docker build .` |
+| `Your app does not include a heroku.yml build manifest` | Se intentó `git push` sin `heroku.yml` commiteado | Commitear `heroku.yml`; verificar stack con `heroku apps:info` (debe ser `container`) |
+| `you have triggered a build ... at least twice` | Misma SHA ya registrada en builds de Heroku | Esperar a un commit nuevo (o `git commit --allow-empty`) y volver a push |
 | App arranca y muere (H10) | Perfil `dev` sin PostgreSQL local | `heroku config:set SPRING_PROFILES_ACTIVE=prod` |
+| Push de CI rechazado con `[rejected] ... (fetch first)` | Checkout shallow (`fetch-depth: 1`): git no puede probar fast-forward contra `main` del remote de Heroku | `actions/checkout` con `fetch-depth: 0` (ya en `deploy.yml`) |

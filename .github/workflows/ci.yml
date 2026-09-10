@@ -91,24 +91,3 @@ jobs:
           path: frontend/coverage/agrocortex-frontend/
           if-no-files-found: ignore
           retention-days: 14
-
-  diagram:
-    name: ER diagram (diagram-as-code)
-    runs-on: ubuntu-latest
-    needs: lint-workflows
-    if: ${{ !failure() && !cancelled() }}
-    defaults:
-      run:
-        working-directory: tools/er-diagram
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Set up Python environment
-        run: |
-          python3 -m venv .venv
-          .venv/bin/python -m pip install --upgrade pip
-          .venv/bin/pip install -r requirements.txt
-
-      - name: Validate ER artifacts are in sync with the model
-        run: .venv/bin/python generate.py --check
