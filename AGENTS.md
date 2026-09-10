@@ -10,7 +10,7 @@
 - Frontend: `cd frontend && npm start` (`ng serve`; la URL del API va por la env `API_URL`).
 - Tests: backend `mvn -B verify` (desde `backend/`); frontend `npx ng test --watch=false --browsers=ChromeHeadless --code-coverage` (desde `frontend/`).
 - Docker local: `docker build -f backend/Dockerfile -t agrocortex:test .` (contexto la raíz).
-- Deploy backend: `heroku.yml` en la raíz (`build.docker.web: backend/Dockerfile`, `run.web: java -jar app.jar`); manual: `git push heroku main` — el contexto del build de Heroku es `backend/` (el `COPY pom.xml` del Dockerfile depende de eso).
+- Deploy: rama `main` protegida (solo PRs); el merge dispara el workflow `Deploy` → backend a Heroku vía `heroku.yml` (`build.docker.web: backend/Dockerfile`, `run.web: java -jar app.jar`; el contexto del build de Heroku es `backend/`) y frontend a Vercel (`vercel deploy --prebuilt --prod`). Ambiente único: sin staging/production. Fallback de emergencia: `git push heroku main`.
 - No hay `mvnw`: usa el `mvn` del sistema.
 
 ## Convenciones
@@ -20,7 +20,7 @@
 - Datos (de `data-model-mvp.md`): `id` uuid PK, auditoría `creadoEn`/`actualizadoEn` en todas las tablas, DANE `departamentoDane` text(2)/`municipioDane` text(5), enums en español.
 - Nombre canónico de la entidad terreno: **Sembradio**/`sembradioId`.
 - Docs: filenames en inglés kebab-case, prefijo numérico por categoría (`docs/0X-*`), cada doc referencia a sus dependientes, assets en `docs/assets/`.
-- Workflows: acciones ancladas a commit SHA, con `[sha] # vX` de referencia. Despliegue: push a `main` → staging, tag `v*` → production.
+- Workflows: acciones ancladas a commit SHA, con `[sha] # vX` de referencia. Despliegue: merge a `main` → `Deploy` (Heroku + Vercel), ambiente único; `main` protegida (PR + checks `CI`/`Security`/`Qodana`).
 
 ## Que NO hacer
 - No hardcodear credenciales ni URLs de despliegue; `.env` y `*.env` están gitignored (solo `!*.env.example`).
@@ -31,3 +31,5 @@
 ## PENDIENTE (preguntar al dueño)
 - PostgreSQL local: hoy se conecta a **Neon** vía env vars ya configuradas en el entorno de dev; falta decidir/implementar docker-compose para dev y/o H2 (JUnit) para pruebas — ¿cuál conviene más?
 - `npm run lint` está roto: falta instalar y configurar `@angular-eslint`.
+- BD de prod en Heroku: hace falta poner las vars `PG*` en `heroku config` (hoy el app arranca sin BD porque no hay entidades; con el MVP se caerá).
+- Vercel: faltan los secrets `VERCEL_TOKEN`/`VERCEL_ORG_ID`/`VERCEL_PROJECT_ID` para que el job `Frontend → Vercel` pase.

@@ -53,6 +53,13 @@ Verificación de stack: `heroku apps:info -a agro-cortex` debe mostrar `Stack: c
 
 ### 1.3. Desplegar
 
+El repo tiene **un solo ambiente**: no hay separación staging/producción. Despliegue automático:
+
+1. Abrir un PR a `main` (la rama está protegida contra push directos).
+2. Cuando `CI`, `Security` y `Qodana` pasan, se mergea → el workflow `Deploy` hace `git push` a Heroku y el build ocurre ahí.
+
+Fallback manual (solo emergencias; el push a Heroku no pasa por la protección de GitHub):
+
 ```bash
 # 1. Verificar el build local (contexto = backend/)
 docker build -f backend/Dockerfile -t agrocortex:test .
@@ -61,7 +68,6 @@ docker build -f backend/Dockerfile -t agrocortex:test .
 heroku git:remote -a agro-cortex
 
 # 3. Desplegar (el build de Docker ocurre en Heroku)
-git add -A && git commit -m "deploy"
 git push heroku main
 ```
 
@@ -83,7 +89,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://agro-cortex-e8efa9bac1c8.heroku
 
 ### 2.1. Modelo de despliegue
 
-`git push` al repositorio de GitHub; Vercel importa el proyecto desde `frontend/` (root directory) y corre `npm run build`.
+El job `Frontend → Vercel` del workflow `Deploy` construye en el runner (`npm run build`) y sube con `npx vercel deploy --prebuilt --prod`. Vercel no re-compila; sirve `dist/`.
 
 ### 2.2. Configuración
 
@@ -131,3 +137,4 @@ curl -s -o /dev/null -w "%{http_code}\n" https://agro-cortex-e8efa9bac1c8.heroku
 | `Your app does not include a heroku.yml build manifest` | Se intentó `git push` sin `heroku.yml` commiteado | Commitear `heroku.yml`; verificar stack con `heroku apps:info` (debe ser `container`) |
 | `you have triggered a build ... at least twice` | Misma SHA ya registrada en builds de Heroku | Esperar a un commit nuevo (o `git commit --allow-empty`) y volver a push |
 | App arranca y muere (H10) | Perfil `dev` sin PostgreSQL local | `heroku config:set SPRING_PROFILES_ACTIVE=prod` |
+| Push de CI rechazado con `[rejected] ... (fetch first)` | Checkout shallow (`fetch-depth: 1`): git no puede probar fast-forward contra `main` del remote de Heroku | `actions/checkout` con `fetch-depth: 0` (ya en `deploy.yml`) |

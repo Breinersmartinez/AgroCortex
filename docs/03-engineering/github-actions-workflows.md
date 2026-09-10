@@ -10,7 +10,7 @@ El repo es un monorepo: una API Spring Boot en `backend/` y una SPA Angular en `
 
 La construcción buscó tres cosas concretas:
 1. **Un CI que falle antes de llegar a `main`**: compilar y correr tests de las dos aplicaciones en cada PR.
-2. **Un CD que repita exactamente el flujo manual documentado** (Heroku vía `heroku.yml` + Vercel), pero automatizado y con ambientes separados.
+2. **Un CD que repita el flujo manual documentado** (Heroku vía `heroku.yml` + Vercel), pero automatizado y con un solo ambiente (sin separación staging/producción).
 3. **Seguridad por defecto**: análisis de código, dependencias y secretos sin que nadie tenga que acordarse de correrlos.
 
 ---
@@ -34,11 +34,9 @@ La construcción buscó tres cosas concretas:
 
 ### 2. `deploy.yml` — el flujo de liberación
 
-**Trigger**: tres vías — `push` a `main` (staging), tags `v*` (producción) y `workflow_dispatch` manual. El dispatch manual existe porque a veces quieres desplegar algo ya validado sin crear un tag, y porque permite elegir ambiente con un `input` de tipo `choice`.
+**Trigger**: dos vías — `push` a `main` y `workflow_dispatch` manual. El repo tiene **un solo ambiente**, sin separación staging/producción: decidimos no multiplicar destinos (otra app Heroku, otro proyecto Vercel, más secrets) mientras no haya usuarios reales ni equipo. Cuando eso cambie, se reintroduce la separación con `environments` y tags `v*`.
 
-**Cuatro jobs, dos por aplicación**, uno para cada ambiente. En lugar de usar un `matrix` con los dos ambientes se prefirió jobs explícitos porque:
-- Cada job referencia su propio `environment`, y con eso GitHub separa secrets, protección y la trazabilidad del deploy en la UI.
-- El `if` de cada job es claro y legible: staging corre en push a `main` o dispatch manual de staging; producción corre en tag `v*` o dispatch manual de producción.
+**Dos jobs, uno por aplicación**: `deploy-backend` y `deploy-frontend`, con `deploy-frontend` `needs: deploy-backend` para que el deploy quede ordenado (el frontend puede apuntar a la API recién desplegada).
 
 **Cómo se despliega el backend** (y por qué así): el flujo manual de `docs/04-operations/deployment.md` usa `heroku.yml` + `git push`. El workflow hace exactamente eso — un único paso sincroniza la URL de git de Heroku con el API key como password:
 
@@ -47,11 +45,11 @@ La construcción buscó tres cosas concretas:
 
 Se eligió git push (y no container registry) porque la imagen la construye Heroku y el `run.web` de `heroku.yml` define el proceso; el runner no necesita Docker ni el CLI de Heroku.
 
-**Smoke test**: tras el push, un `curl --fail --retry 5` contra la URL pública del ambiente. Es un chequeo barato que detecta el caso típico "la app arrancó y se cayó" (el célebre H10 de Heroku).
+**Smoke test**: tras el push, un `curl --retry 5` (sin `--fail`) contra la URL pública. No usa `--fail` a propósito: la API responde `401` por defecto (Spring Security sin `SecurityConfig` todavía) y el chequeo busca que el servidor responda, no un status concreto. Detecta el caso típico "la app arrancó y se cayó" (el célebre H10 de Heroku).
 
-**Frontend**: se construye en el runner (`npm run build`) y se sube con `vercel deploy --prebuilt`. Usar `--prebuilt` es intencional: el build ya ocurrió en CI y en el runner, así Vercel no re-compila (y no puede fallar por razones distintas a las del build local).
+**Frontend**: se construye en el runner (`npm run build`) y se sube con `vercel deploy --prebuilt --prod`. Usar `--prebuilt` es intencional: el build ya ocurrió en CI, así Vercel no re-compila (y no puede fallar por razones distintas a las del build local). `--prod` porque, en el ambiente único, lo mergeado a `main` es lo que ven los usuarios.
 
-**Concurrency**: `deploy-<ambiente>` con `cancel-in-progress: false`. Para CD no queremos cancelar un deploy en marcha: si llega un segundo disparo mientras uno corre, el segundo espera. Liberar dos releases "al mismo tiempo" en Heroku es exactamente la clase de cosa que corrompe releases.
+**Concurrency**: grupo `deploy` con `cancel-in-progress: false`. Para CD no queremos cancelar un deploy en marcha: si llega un segundo disparo mientras uno corre, el segundo espera. Liberar dos releases "al mismo tiempo" en Heroku es exactamente la clase de cosa que corrompe releases.
 
 ### 3. `security.yml` — seguridad sin fricción
 
@@ -99,5 +97,5 @@ La regla es: cada job declara lo que usa y nada más. Por defecto `permissions: 
 ## Lo que no se construyó (y por qué)
 
 - **Gate CI → CD por `needs`**: un workflow no puede depender de otro workflow. La forma estándar es que CI sea un *required status check* en branch protection de `main`; así, nada llega a `main` (y por lo tanto a deploy) sin CI verde. Eso se configura en Settings de GitHub, no en código.
-- **Reusable workflows**: para dos aplicaciones con dos ambientes, la duplicación controlada de 4 jobs en `deploy.yml` es más legible que la indirección de `workflow_call`. Si el repo crece a 5+ servicios, ese es el refactor indicado.
-- **Secrets en OIDC**: Heroku y Vercel no soportan OIDC federation, así que los tokens de API son la vía posible. Todos viven como secrets de environment.
+- **Reusable workflows**: para dos aplicaciones, la duplicación controlada de 2 jobs en `deploy.yml` es más legible que la indirección de `workflow_call`. Si el repo crece a 5+ servicios, ese es el refactor indicado.
+- **Secrets en OIDC**: Heroku y Vercel no soportan OIDC federation, así que los tokens de API son la vía posible. Todos viven como secrets de repositorio (un solo ambiente de despliegue).
