@@ -7,7 +7,7 @@ Pipeline de integración y despliegue continuo del monorepo. Complementa `deploy
 | Workflow | Archivo | Cuándo corre | Qué hace |
 |---|---|---|---|
 | **CI** | `.github/workflows/ci.yml` | PR a `main` y push a `main` | Lint de workflows, compila y testea backend (Maven) y frontend (Angular/Karma headless) con coverage |
-| **Deploy** | `.github/workflows/deploy.yml` | Push a `main` → staging · tag `v*` → producción · `workflow_dispatch` manual | Construye imagen y libera en Heroku (backend) y desplega en Vercel (frontend) |
+| **Deploy** | `.github/workflows/deploy.yml` | Push a `main` → staging · tag `v*` → producción · `workflow_dispatch` manual | Despliega el backend en Heroku (`git push` + `heroku.yml`) y el frontend en Vercel |
 | **Security** | `.github/workflows/security.yml` | Push/PR a `main` + semanal (lunes 02:00) | CodeQL (SAST), Dependency Review (SCA) y Gitleaks (secretos) |
 
 ## Estándares aplicados
@@ -25,7 +25,7 @@ Configurar en Settings → Environments (`staging` y `production`):
 
 | Secreto | Dónde | Uso |
 |---|---|---|
-| `HEROKU_API_KEY` | staging y production | Login + release en el Container Registry de Heroku |
+| `HEROKU_API_KEY` | staging y production | Autenticación del `git push` a Heroku (usuario `heroku`, password = API key) |
 | `HEROKU_APP_NAME` | staging y production | Nombre de la app Heroku (ej. `agro-cortex`) |
 | `STAGING_APP_URL` / `PRODUCTION_APP_URL` | según ambiente | Smoke test del backend desplegado |
 | `STAGING_API_URL` / `PRODUCTION_API_URL` | según ambiente | Variable de build del frontend (URL base de la API) |
@@ -63,7 +63,7 @@ Despliegue manual alternativo: Actions → *Deploy* → *Run workflow* → elegi
 
 ## Notas
 
-- **Backend** se despliega vía el Container Registry (no `git push` a Heroku), igual que el flujo manual de `deployment.md`. No debe existir `heroku.yml` en la raíz.
+- **Backend** se despliega con `git push` de `HEAD:main` a Heroku, que construye la imagen desde `heroku.yml` (`build.docker.web: backend/Dockerfile`). Igual que el flujo manual de `deployment.md`.
 - **Frontend**: el build ocurre en el runner (`npm run build`) y `vercel deploy --prebuilt` sube `dist/`. Vercel no necesita re-build.
 - **Gitleaks** falla el run si detecta secretos commiteados; corre solo en push (los PRs se cubren con Dependency Review).
-- El archivo `deployment.md` sigue siendo la referencia operativa de troubleshooting (H10, `No images to push`, etc.).
+- El archivo `deployment.md` sigue siendo la referencia operativa de troubleshooting (H10, `No images to push` histórico, etc.).

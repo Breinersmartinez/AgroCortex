@@ -9,7 +9,8 @@
 - Backend (dev): PostgreSQL ya corriendo en `localhost:5432` con DB/user/pass `agrocortex`; `cd backend && mvn spring-boot:run`. Perfil `dev` por defecto; Swagger en `/swagger-ui.html`.
 - Frontend: `cd frontend && npm start` (`ng serve`; la URL del API va por la env `API_URL`).
 - Tests: backend `mvn -B verify` (desde `backend/`); frontend `npx ng test --watch=false --browsers=ChromeHeadless --code-coverage` (desde `frontend/`).
-- Docker local: `docker build -f backend/Dockerfile -t agrocortex:test .` (contexto la raíz); deploy usa contexto `backend`.
+- Docker local: `docker build -f backend/Dockerfile -t agrocortex:test .` (contexto la raíz).
+- Deploy backend: `heroku.yml` en la raíz (`build.docker.web: backend/Dockerfile`, `run.web: java -jar app.jar`); manual: `git push heroku main` — el contexto del build de Heroku es `backend/` (el `COPY pom.xml` del Dockerfile depende de eso).
 - No hay `mvnw`: usa el `mvn` del sistema.
 
 ## Convenciones

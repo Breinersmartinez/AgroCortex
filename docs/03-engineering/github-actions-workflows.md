@@ -10,7 +10,7 @@ El repo es un monorepo: una API Spring Boot en `backend/` y una SPA Angular en `
 
 La construcción buscó tres cosas concretas:
 1. **Un CI que falle antes de llegar a `main`**: compilar y correr tests de las dos aplicaciones en cada PR.
-2. **Un CD que repita exactamente el flujo manual documentado** (Container Registry de Heroku + Vercel), pero automatizado y con ambientes separados.
+2. **Un CD que repita exactamente el flujo manual documentado** (Heroku vía `heroku.yml` + Vercel), pero automatizado y con ambientes separados.
 3. **Seguridad por defecto**: análisis de código, dependencias y secretos sin que nadie tenga que acordarse de correrlos.
 
 ---
@@ -40,12 +40,14 @@ La construcción buscó tres cosas concretas:
 - Cada job referencia su propio `environment`, y con eso GitHub separa secrets, protección y la trazabilidad del deploy en la UI.
 - El `if` de cada job es claro y legible: staging corre en push a `main` o dispatch manual de staging; producción corre en tag `v*` o dispatch manual de producción.
 
-**Cómo se desplegó el backend** (y por qué así): el flujo manual de `docs/04-operations/deployment.md` usa `heroku container:push`/`release`. El workflow lo traduce a acciones oficiales de Docker:
-1. `docker/login-action` contra `registry.heroku.com` (usuario `_`, password = `HEROKU_API_KEY`).
-2. `docker/build-push-action` con `context: backend` construye la imagen y la empuja como `registry.heroku.com/<app>/web`.
-3. `heroku container:release` libera el release — el CLI se instala on-the-fly con `npm install --global heroku`. Solo se necesita para ese comando; el push pesado lo hacen las actions de Docker, que tienen mejor cache (`cache-from/to: type=gha`) y son mantenidas por la comunidad oficial de Docker.
+**Cómo se despliega el backend** (y por qué así): el flujo manual de `docs/04-operations/deployment.md` usa `heroku.yml` + `git push`. El workflow hace exactamente eso — un único paso sincroniza la URL de git de Heroku con el API key como password:
 
-**Smoke test**: después de liberar, un `curl --fail --retry 5` contra la URL pública del ambiente. Es un chequeo barato que detecta el caso típico "la app arrancó y se cayó" (el célebre H10 de Heroku).
+1. `git push https://heroku:${HEROKU_API_KEY}@git.heroku.com/<app>.git HEAD:main`.
+2. Heroku construye la imagen con `heroku.yml` (`build.docker.web: backend/Dockerfile`) y libera el release.
+
+Se eligió git push (y no container registry) porque la imagen la construye Heroku y el `run.web` de `heroku.yml` define el proceso; el runner no necesita Docker ni el CLI de Heroku.
+
+**Smoke test**: tras el push, un `curl --fail --retry 5` contra la URL pública del ambiente. Es un chequeo barato que detecta el caso típico "la app arrancó y se cayó" (el célebre H10 de Heroku).
 
 **Frontend**: se construye en el runner (`npm run build`) y se sube con `vercel deploy --prebuilt`. Usar `--prebuilt` es intencional: el build ya ocurrió en CI y en el runner, así Vercel no re-compila (y no puede fallar por razones distintas a las del build local).
 

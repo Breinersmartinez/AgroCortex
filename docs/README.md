@@ -28,7 +28,7 @@ Portal de documentación técnica del proyecto. Organizada por categorías funci
 
 | Documento | Qué es | Relacionado con |
 |---|---|---|
-| [deployment.md](04-operations/deployment.md) | Despliegue manual: Heroku (Container Registry) y Vercel, con troubleshooting | CI/CD (04) |
+| [deployment.md](04-operations/deployment.md) | Despliegue manual: Heroku (`heroku.yml` + git push) y Vercel, con troubleshooting | CI/CD (04) |
 | [ci-cd.md](04-operations/ci-cd.md) | Pipeline automatizado CI/CD: workflows, secretos, environments, branch protection | Workflows (03) · Deployment (04) |
 
 ### 05 — Security
