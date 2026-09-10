@@ -11,6 +11,7 @@ public interface SpringDataUserJpaRepository extends JpaRepository<UserJpaEntity
     @EntityGraph(attributePaths = {"roles", "roles.permissions"})
     Optional<UserJpaEntity> findByEmailIgnoreCase(String email);
 
+    @Override
     @EntityGraph(attributePaths = {"roles", "roles.permissions"})
-    Optional<UserJpaEntity> findDetailedById(UUID id);
+    Optional<UserJpaEntity> findById(UUID id);
 }
