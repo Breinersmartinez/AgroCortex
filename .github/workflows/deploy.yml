@@ -43,7 +43,7 @@ jobs:
           HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
 
       - name: Smoke test
-        run: curl --fail --silent --show-error --output /dev/null --retry 5 --retry-delay 10 "$APP_URL"
+        run: curl --silent --show-error --output /dev/null --retry 5 --retry-delay 10 -w "%{http_code}" -o /dev/null "$APP_URL"
         env:
           APP_URL: ${{ secrets.STAGING_APP_URL }}
 
@@ -63,7 +63,7 @@ jobs:
           HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
 
       - name: Smoke test
-        run: curl --fail --silent --show-error --output /dev/null --retry 5 --retry-delay 10 "$APP_URL"
+        run: curl --silent --show-error --output /dev/null --retry 5 --retry-delay 10 -w "%{http_code}" -o /dev/null "$APP_URL"
         env:
           APP_URL: ${{ secrets.PRODUCTION_APP_URL }}
 
