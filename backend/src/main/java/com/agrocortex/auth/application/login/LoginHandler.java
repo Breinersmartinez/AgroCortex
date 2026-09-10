@@ -1,5 +1,6 @@
 package com.agrocortex.auth.application.login;
 
+import com.agrocortex.auth.application.exception.InvalidCredentialsException;
 import com.agrocortex.auth.application.ports.out.UserRepository;
 import com.agrocortex.auth.domain.User;
 import com.agrocortex.shared.application.ports.out.PasswordHasher;
@@ -27,10 +28,11 @@ public final class LoginHandler implements LoginUseCase {
     @Override
     public LoginResult execute(LoginCommand command) {
         User user = userRepository.findByEmail(command.email())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
+                .filter(User::active)
+                .orElseThrow(InvalidCredentialsException::new);
 
         if (!passwordHasher.matches(command.password(), user.passwordHash())) {
-            throw new IllegalArgumentException("Invalid credentials");
+            throw new InvalidCredentialsException();
         }
 
         return new LoginResult(
