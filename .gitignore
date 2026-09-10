@@ -43,8 +43,3 @@ Thumbs.db
 
 # Archivos subidos
 uploads/
-
-# Tooling Python (diagram-as-code)
-tools/er-diagram/.venv/
-**/__pycache__/
-*.pyc

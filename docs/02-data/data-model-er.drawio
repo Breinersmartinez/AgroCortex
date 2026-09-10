@@ -28,34 +28,34 @@
         <mxCell id="AGRICULTOR-r6" value="estado&amp;nbsp;" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="AGRICULTOR" vertex="1">
           <mxGeometry y="186" width="320" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="PARCELA" value="Parcela" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=1;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;fillColor=none;fontSize=13;" parent="1" vertex="1">
+        <mxCell id="SEMBRADIO" value="Sembradio" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=1;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;fillColor=none;fontSize=13;" parent="1" vertex="1">
           <mxGeometry x="560" y="100" width="320" height="264" as="geometry" />
         </mxCell>
-        <mxCell id="PARCELA-r0" value="&lt;b&gt;PK&lt;/b&gt;&amp;nbsp;&lt;b&gt;id&lt;/b&gt;" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="PARCELA" vertex="1">
+        <mxCell id="SEMBRADIO-r0" value="&lt;b&gt;PK&lt;/b&gt;&amp;nbsp;&lt;b&gt;id&lt;/b&gt;" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="SEMBRADIO" vertex="1">
           <mxGeometry y="30" width="320" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="PARCELA-r1" value="&lt;b&gt;FK&lt;/b&gt;&amp;nbsp;&lt;b&gt;agricultorId&lt;/b&gt;" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="PARCELA" vertex="1">
+        <mxCell id="SEMBRADIO-r1" value="&lt;b&gt;FK&lt;/b&gt;&amp;nbsp;&lt;b&gt;agricultorId&lt;/b&gt;" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="SEMBRADIO" vertex="1">
           <mxGeometry y="56" width="320" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="PARCELA-r2" value="nombre" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="PARCELA" vertex="1">
+        <mxCell id="SEMBRADIO-r2" value="nombre" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="SEMBRADIO" vertex="1">
           <mxGeometry y="82" width="320" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="PARCELA-r3" value="areaHectareas" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="PARCELA" vertex="1">
+        <mxCell id="SEMBRADIO-r3" value="areaHectareas" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="SEMBRADIO" vertex="1">
           <mxGeometry y="108" width="320" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="PARCELA-r4" value="altitudM&amp;nbsp;" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="PARCELA" vertex="1">
+        <mxCell id="SEMBRADIO-r4" value="altitudM&amp;nbsp;" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="SEMBRADIO" vertex="1">
           <mxGeometry y="134" width="320" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="PARCELA-r5" value="municipioDane" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="PARCELA" vertex="1">
+        <mxCell id="SEMBRADIO-r5" value="municipioDane" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="SEMBRADIO" vertex="1">
           <mxGeometry y="160" width="320" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="PARCELA-r6" value="departamentoDane" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="PARCELA" vertex="1">
+        <mxCell id="SEMBRADIO-r6" value="departamentoDane" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="SEMBRADIO" vertex="1">
           <mxGeometry y="186" width="320" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="PARCELA-r7" value="tipoSuelo&amp;nbsp;" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="PARCELA" vertex="1">
+        <mxCell id="SEMBRADIO-r7" value="tipoSuelo&amp;nbsp;" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="SEMBRADIO" vertex="1">
           <mxGeometry y="212" width="320" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="PARCELA-r8" value="fechaRegistro" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="PARCELA" vertex="1">
+        <mxCell id="SEMBRADIO-r8" value="fechaRegistro" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="SEMBRADIO" vertex="1">
           <mxGeometry y="238" width="320" height="26" as="geometry" />
         </mxCell>
         <mxCell id="CULTIVO" value="Cultivo" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=1;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;fillColor=none;fontSize=13;" parent="1" vertex="1">
@@ -64,7 +64,7 @@
         <mxCell id="CULTIVO-r0" value="&lt;b&gt;PK&lt;/b&gt;&amp;nbsp;&lt;b&gt;id&lt;/b&gt;" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="CULTIVO" vertex="1">
           <mxGeometry y="30" width="320" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="CULTIVO-r1" value="&lt;b&gt;FK&lt;/b&gt;&amp;nbsp;&lt;b&gt;parcelaId&lt;/b&gt;" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="CULTIVO" vertex="1">
+        <mxCell id="CULTIVO-r1" value="&lt;b&gt;FK&lt;/b&gt;&amp;nbsp;&lt;b&gt;sembradioId&lt;/b&gt;" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="CULTIVO" vertex="1">
           <mxGeometry y="56" width="320" height="26" as="geometry" />
         </mxCell>
         <mxCell id="CULTIVO-r2" value="tipo&amp;nbsp;" style="text;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;" parent="CULTIVO" vertex="1">
@@ -241,10 +241,10 @@
         <mxCell id="RECOMENDACION-r10" value="validadoEn&amp;nbsp;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;html=1;fontFamily=Menlo,Consolas,monospace;fontSize=11;fontColor=#37474F;" parent="RECOMENDACION" vertex="1">
           <mxGeometry y="290" width="320" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="e0" value="tiene (1 — N)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;startArrow=ERmandOne;endArrow=ERoneToMany;fontColor=#37474F;fontSize=11;fontStyle=2;fillColor=none;startFill=0;endFill=0;" parent="1" source="AGRICULTOR" target="PARCELA" edge="1">
+        <mxCell id="e0" value="tiene (1 — N)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;startArrow=ERmandOne;endArrow=ERoneToMany;fontColor=#37474F;fontSize=11;fontStyle=2;fillColor=none;startFill=0;endFill=0;" parent="1" source="AGRICULTOR" target="SEMBRADIO" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e1" value="contiene (1 — N)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;startArrow=ERmandOne;endArrow=ERoneToMany;fontColor=#37474F;fontSize=11;fontStyle=2;fillColor=none;startFill=0;endFill=0;" parent="1" source="PARCELA" target="CULTIVO" edge="1">
+        <mxCell id="e1" value="contiene (1 — N)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;startArrow=ERmandOne;endArrow=ERoneToMany;fontColor=#37474F;fontSize=11;fontStyle=2;fillColor=none;startFill=0;endFill=0;" parent="1" source="SEMBRADIO" target="CULTIVO" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="e2" value="hace (1 — N)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;startArrow=none;endArrow=none;fontColor=#37474F;fontSize=11;fontStyle=2;fillColor=none;" parent="1" source="AGRICULTOR" target="CONSULTA" edge="1">
