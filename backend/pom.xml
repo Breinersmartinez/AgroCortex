@@ -21,7 +21,6 @@
         <java.version>17</java.version>
         <springdoc.version>2.7.0</springdoc.version>
         <jjwt.version>0.13.0</jjwt.version>
-        <flyway.version>13.5.0</flyway.version>
     </properties>
 
     <dependencies>
@@ -44,12 +43,10 @@
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
-            <version>${flyway.version}</version>
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
-            <version>${flyway.version}</version>
             <scope>runtime</scope>
         </dependency>
 
