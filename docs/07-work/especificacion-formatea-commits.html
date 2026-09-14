@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Especificación: Skill formatea-commits</title>
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 880px; margin: 0 auto; padding: 2rem 1.5rem; line-height: 1.55; color: #1f2933; }
+    h1 { font-size: 1.6rem; border-bottom: 3px solid #0b3d2e; padding-bottom: .4rem; }
+    h2 { font-size: 1.15rem; margin-top: 2.4rem; border-left: 4px solid #0b3d2e; padding-left: .6rem; }
+    p, li { margin: .4rem 0; }
+    code { background: #eef3f0; padding: .1rem .3rem; border-radius: 4px; font-size: .92em; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .95rem; }
+    th, td { border: 1px solid #cbd2d9; padding: .5rem .6rem; text-align: left; vertical-align: top; }
+    th { background: #eef3f0; }
+    .si-no { text-align: center; width: 4.5rem; white-space: nowrap; }
+    svg { max-width: 100%; height: auto; display: block; margin: 1rem auto; }
+    figure { margin: 1rem 0; }
+    figcaption { font-size: .9rem; color: #52606d; text-align: center; margin-top: .4rem; }
+  </style>
+</head>
+<body>
+
+  <h1>Especificación: Skill formatea-commits</h1>
+
+  <h2>§1 Resumen</h2>
+  <p>
+    Construir una skill que <strong>sugiere y valida mensajes de commit</strong> del monorepo AgroCortex siguiendo
+    <code>docs/06-contribution/git-commit-prefixes.md</code> (Conventional Commits: <code>tipo[ámbito]: descripción</code>).
+    Analiza el diff y genera el mensaje con tipo y ámbito correctos, y comprueba mensajes ya escritos contra el formato.
+    La skill <strong>nunca ejecuta <code>git commit</code></strong>: entrega el mensaje listo. La prueba de que hace falta:
+    la convención existe en el doc pero nada la aplica ni la comprueba.
+  </p>
+
+  <h2>§2 Objetivos</h2>
+  <ul>
+    <li><strong>O1.</strong> Existe <code>skills/formatea-commits/SKILL.md</code> con frontmatter <code>name: formatea-commits</code> y <code>description</code> en una sola línea, sin placeholders ni TODO.</li>
+    <li><strong>O2.</strong> La fuente única del formato es <code>docs/06-contribution/git-commit-prefixes.md</code>: la skill la lee y si el doc cambia, la skill obedece el cambio (no tiene el formato copiado como dogma).</li>
+    <li><strong>O3.</strong> Modo generar: lee <code>git diff --staged</code> (y trabaja con el working tree si no hay staged) e infiere tipo + ámbito por componente y contenido; entrega un mensaje <code>tipo[ámbito]: verbo imperativo en minúsculas</code> en español, breve (≤50 caracteres el título).</li>
+    <li><strong>O4.</strong> Modo validar: comprueba un mensaje dado contra el formato y reporta cada violación (tipo desconocido, falta de colon+espacio, mayúscula inicial, no-imperativo, título muy largo) con el mensaje corregido propuesto.</li>
+    <li><strong>O5.</strong> La skill jamás ejecuta <code>git commit</code>, <code>amend</code> ni <code>push</code>: entrega el mensaje y le deja el commit al usuario.</li>
+    <li><strong>O6.</strong> Instalada en <code>skills/formatea-commits/</code> (repo), <code>~/.opencode/skills/</code> y <code>~/.agents/skills/</code>, empaquetada como <code>formatea-commits.skill</code> (verificable con <code>unzip -l</code>).</li>
+  </ul>
+
+  <h2>§3 Fuera de alcance</h2>
+  <ul>
+    <li>No ejecuta <code>git commit</code> nunca, ni siquiera con confirmación.</li>
+    <li>No reescribe commits existentes (sin <code>amend</code>, sin <code>rebase</code>, sin force push).</li>
+    <li>No gestiona Git: no hace push, merge ni resuelve conflictos.</li>
+    <li>No documenta código (eso es <code>documenta-codigo</code>).</li>
+    <li>No decide el tipo cuando el cambio es genuinamente ambiguo: elige el más probable y lo marca para que el usuario lo revise.</li>
+  </ul>
+
+  <h2>§4 Diseño</h2>
+  <p>
+    La skill ejecuta 5 pasos: leer la convención, capturar el intento de cambio, inferir tipo y ámbito, generar (o
+    validar) el mensaje y presentarlo listo para copiar. Los modos <em>generar</em> y <em>validar</em> comparten la
+    taxonomía del doc de convención.
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="diag-titulo diag-desc">
+      <title id="diag-titulo">Flujo de la skill de formateo de commits</title>
+      <desc id="diag-desc">Cinco pasos: leer convención, capturar diff, inferir tipo/ámbito, generar o validar, entregar mensaje.</desc>
+      <defs>
+        <marker id="flechafc" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 z" fill="#0b3d2e"/>
+        </marker>
+      </defs>
+      <rect x="10" y="90" width="135" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="77" y="116" text-anchor="middle" font-size="13" fill="#1f2933">1· Leer convención</text>
+      <text x="77" y="134" text-anchor="middle" font-size="11" fill="#52606d">git-commit-prefixes.md</text>
+
+      <rect x="165" y="90" width="135" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="232" y="116" text-anchor="middle" font-size="13" fill="#1f2933">2· Capturar diff</text>
+      <text x="232" y="134" text-anchor="middle" font-size="11" fill="#52606d">git diff --staged</text>
+
+      <rect x="320" y="90" width="135" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="387" y="116" text-anchor="middle" font-size="13" fill="#1f2933">3· Inferir tipo/ámbito</text>
+      <text x="387" y="134" text-anchor="middle" font-size="11" fill="#52606d">paths + contenido</text>
+
+      <rect x="475" y="90" width="135" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="542" y="116" text-anchor="middle" font-size="13" fill="#1f2933">4· Generar o validar</text>
+      <text x="542" y="134" text-anchor="middle" font-size="11" fill="#52606d">imperativo minúsculas</text>
+
+      <rect x="630" y="90" width="120" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="690" y="116" text-anchor="middle" font-size="13" fill="#1f2933">5· Entregar mensaje</text>
+      <text x="690" y="134" text-anchor="middle" font-size="11" fill="#52606d">nunca commitea</text>
+
+      <line x1="145" y1="120" x2="158" y2="120" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flechafc)"/>
+      <line x1="300" y1="120" x2="313" y2="120" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flechafc)"/>
+      <line x1="455" y1="120" x2="468" y2="120" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flechafc)"/>
+      <line x1="610" y1="120" x2="623" y2="120" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flechafc)"/>
+    </svg>
+    <figcaption>Figura 1 — Flujo de la skill de formateo de commits</figcaption>
+  </figure>
+
+  <p><strong>Reglas que debe codificar la skill:</strong></p>
+  <ul>
+    <li><strong>Taxonomía:</strong> los tipos salen del doc (<code>feat</code>, <code>fix</code>, <code>docs</code>, <code>style</code>, <code>refactor</code>, <code>perf</code>, <code>test</code>, <code>chore</code>, <code>build</code>, <code>ci</code>); un tipo no listado se reporta en validación.</li>
+    <li><strong>Inferencia de tipo:</strong> predominancia por paths y contenido: <code>.github/workflows</code> → <code>ci</code>; deps (<code>pom.xml</code>, <code>package.json</code>) → <code>build</code> o <code>chore</code> según dependencia vs tooling; solo docs → <code>docs</code>; pruebas → <code>test</code>; sql/migraciones → <code>chore</code> o <code>feat</code> según contenido; java/ts de negocio → <code>feat</code>/<code>fix</code> según el diff.</li>
+    <li><strong>Ámbito:</strong> si el cambio toca un módulo dominante (auth, farmers/sembradios, crops, consultations, diagnoses, docs, ci, backend, frontend…), va el ámbito; si toca transversal, sin ámbito o con el componente mayoritário y la marca "revise".</li>
+    <li><strong>Descripción:</strong> imperativo en español, minúsculas (salvo nombres propios), título ≤50 caracteres; se puede ofrecer un cuerpo corto tras una línea en blanco cuando el diff lo pida.</li>
+    <li><strong>Validación:</strong> regex <code>^(feat|fix|docs|style|refactor|perf|test|chore|build|ci)(\([a-z0-9-]+\))?: .+</code> contra el título; cada violación se reporta con el ejemplo corregido.</li>
+  </ul>
+
+  <h2>§5 Casos borde</h2>
+  <table>
+    <thead><tr><th>Caso</th><th>Comportamiento esperado</th></tr></thead>
+    <tbody>
+      <tr><td>Nada staged y working tree limpio</td><td>Avisa que no hay cambios que formatear y termina.</td></tr>
+      <tr><td>Cambios en varios módulos a la vez</td><td>Elige el tipo/ámbito del módulo mayoritário, lista los demás en el cuerpo y marca "revise" si el reparto es dudoso.</td></tr>
+      <tr><td>Tipo ambiguo (deps + tooling)</td><td>Propone el más probable (<code>build</code> vs <code>chore</code>) con justificación de una línea y lo marca para revisar.</td></tr>
+      <tr><td>Mensaje a validar en mayúscula o no-imperativo</td><td>Reporta la violación concreta y entrega el mensaje corregido manteniendo el contenido.</td></tr>
+      <tr><td>Título >50 caracteres al validar</td><td>Reporta longitud y propone una versión más corta.</td></tr>
+      <tr><td>Commit tipo merge</td><td>Avisa que los commits de merge no llevan tipo Conventional Commits y no los formatea.</td></tr>
+      <tr><td>Diff que solo toca docs</td><td>Ámbito <code>docs</code> y tipo <code>docs</code>, salvo que el cambio de doc afecte otra categoría reportada.</td></tr>
+      <tr><td>Descripción con nombre propio (p. ej. "Sembradio")</td><td>Se respeta la mayúscula del nombre propio dentro de la minúscula general.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>§6 Criterios de aceptación</h2>
+  <table>
+    <thead><tr><th>#</th><th>Criterio (comprobación ejecutable)</th><th>Sí / No</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Existe <code>skills/formatea-commits/SKILL.md</code> con frontmatter <code>name: formatea-commits</code> y <code>description</code> en una sola línea, sin TODO ni placeholders.</td><td class="si-no">☐</td></tr>
+      <tr><td>2</td><td>Instalada en <code>~/.opencode/skills/formatea-commits/</code>, <code>~/.agents/skills/formatea-commits/</code> y empaquetada <code>formatea-commits.skill</code> (verificable con <code>unzip -l</code>).</td><td class="si-no">☐</td></tr>
+      <tr><td>3</td><td>Ejecutada en modo generar sobre un staged real de este repo, entrega un mensaje con la forma <code>tipo[ámbito]: verbo imperativo en minúsculas</code> en español.</td><td class="si-no">☐</td></tr>
+      <tr><td>4</td><td>Un staged que solo toca <code>.github/workflows</code> produce <code>ci</code>; uno de docs puros produce <code>docs</code> (inferencia comprobable).</td><td class="si-no">☐</td></tr>
+      <tr><td>5</td><td>Un mensaje <code>Feat(Auth): Agregar login</code> a validar se reporta con sus violaciones (tipo minúscula, ámbito minúscula, mayúscula inicial) y un mensaje corregido.</td><td class="si-no">☐</td></tr>
+      <tr><td>6</td><td>Tras cualquier ejecución, <code>git log</code> no muestra commits nuevos: la skill nunca commitea.</td><td class="si-no">☐</td></tr>
+      <tr><td>7</td><td>El modo generar lista los paths staged y el razonamiento tipo/ámbito en una línea (traza visible).</td><td class="si-no">☐</td></tr>
+      <tr><td>8</td><td>No hubo commits sobre <code>main</code> ni deploys dentro de este trabajo.</td><td class="si-no">☐</td></tr>
+    </tbody>
+  </table>
+
+  <h2>§7 Decisiones</h2>
+  <table>
+    <thead><tr><th>Duda que apareció</th><th>Se eligió</th><th>Se descartó</th><th>Por qué</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Estructura de entregables</td>
+        <td>Skills separadas: <code>formatea-commits</code> y <code>documenta-codigo</code></td>
+        <td>Una skill con dos modos</td>
+        <td>Un propósito, una skill: la validación e instalación independiente evitan que un cambio de convención de commits arrastre reglas de documentación de código.</td>
+      </tr>
+      <tr>
+        <td>Comportamiento de commits</td>
+        <td>Sugerir + validar mensajes</td>
+        <td>Solo lint; solo generar</td>
+        <td>Para la convención ya documentada, tanto generar como comprobar cuestan lo mismo y cubren el ciclo: escribir bien y verificar lo escrito.</td>
+      </tr>
+      <tr>
+        <td>¿La skill commitea?</td>
+        <td>Nunca ejecuta <code>git commit</code></td>
+        <td>Auto-commit con confirmación</td>
+        <td>El commit es una decisión del autor sobre su historial; la skill entrega el mensaje y respeta la barrera de `main` protegida.</td>
+      </tr>
+      <tr>
+        <td>Fuente del formato</td>
+        <td>El doc <code>git-commit-prefixes.md</code> es la fuente única</td>
+        <td>Formato endurecido en la skill</td>
+        <td>Si el doc de convención cambia, la skill lo obedece sin reescribir la skill; el doc manda, la skill traduce.</td>
+      </tr>
+      <tr>
+        <td>Idioma de la descripción</td>
+        <td>Español, imperativo, minúsculas</td>
+        <td>Inglés; singular sustantivos</td>
+        <td>El repo y su documentación están en español; el imperativo es el que pide el formato Conventional Commits.</td>
+      </tr>
+    </tbody>
+  </table>
+
+</body>
+</html>

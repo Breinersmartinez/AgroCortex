@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Especificación: Skill concuerda-docs-diagramas</title>
+  <style>
+    :root { color-scheme: light; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      max-width: 880px; margin: 0 auto; padding: 2rem 1.5rem;
+      line-height: 1.55; color: #1f2933;
+    }
+    h1 { font-size: 1.6rem; border-bottom: 3px solid #0b3d2e; padding-bottom: .4rem; }
+    h2 { font-size: 1.15rem; margin-top: 2.4rem; border-left: 4px solid #0b3d2e; padding-left: .6rem; }
+    p, li { margin: .4rem 0; }
+    code { background: #eef3f0; padding: .1rem .3rem; border-radius: 4px; font-size: .92em; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .95rem; }
+    th, td { border: 1px solid #cbd2d9; padding: .5rem .6rem; text-align: left; vertical-align: top; }
+    th { background: #eef3f0; }
+    .si-no { text-align: center; width: 4.5rem; white-space: nowrap; }
+    svg { max-width: 100%; height: auto; display: block; margin: 1rem auto; }
+    figure { margin: 1rem 0; }
+    figcaption { font-size: .9rem; color: #52606d; text-align: center; margin-top: .4rem; }
+  </style>
+</head>
+<body>
+
+  <h1>Especificación: Skill concuerda-docs-diagramas</h1>
+
+  <h2>§1 Resumen</h2>
+  <p>
+    Construir una skill que audita la concordancia de las <strong>tres descripciones del modelo de datos</strong>:
+    <code>data-model-mvp.md</code> (fuente única de estructura), <code>data-model-er.drawio</code> (diagrama visual) y las
+    migraciones SQL (<code>V1__create_rbac.sql</code>/<code>V2__seed_rbac.sql</code>), y emite una tabla de drift entre
+    cualquier par de fuentes. La prueba de que hace falta: hoy las migraciones crean el esquema RBAC que la md no
+    documenta y el diagrama no dibuja, y no hay forma automática de ver que las tres versiones del mismo modelo se
+    apartaron en silencio.
+  </p>
+
+  <h2>§2 Objetivos</h2>
+  <ul>
+    <li><strong>O1.</strong> Existe <code>skills/concuerda-docs-diagramas/SKILL.md</code> con frontmatter <code>name: concuerda-docs-diagramas</code> y <code>description</code> en una sola línea, sin placeholders ni TODO.</li>
+    <li><strong>O2.</strong> La skill lee y normaliza las tres fuentes: la md (entidades, atributos, tipos, PK/FK, enums), el <code>.drawio</code> (parseando el XML de <code>&lt;mxCell&gt;</code> para extraer celdas de entidad, filas de atributo y aristas de relación, sin abrir draw.io) y las migraciones SQL (<code>CREATE TABLE</code>, columnas, tipos, <code>FOREIGN KEY</code>, enums).</li>
+    <li><strong>O3.</strong> Ejecutada sobre este repo en modo read-only, emite la tabla drift con columnas <em>dice (fuente A) / tiene (fuente B) / corrección</em> y detecta las discrepancias prevalentes actuales: entidades RBAC de las migraciones sin documentar en la md, entidades del MVP documentadas en la md sin migración creada, y atributos/tipos/relaciones divergentes entre md y drawio si las hay.</li>
+    <li><strong>O4.</strong> La comparación es cruzada entre los tres pares (md↔drawio, md↔migraciones, drawio↔migraciones) para cada elemento: entidad, atributo, tipo, PK/FK y cardinalidad. Cualquier discrepancia en cualquiera de las vías genera una fila.</li>
+    <li><strong>O5.</strong> En modo read-only no se modifica ningún archivo: <code>git status</code> queda limpio y en particular <code>.drawio</code> y <code>db/migration/*.sql</code> sin cambios.</li>
+    <li><strong>O6.</strong> En modo corrección solo se edita <code>data-model-mvp.md</code>, con confirmación explícita por fila; el re-audit posterior reporta 0 drift en las filas corregidas.</li>
+    <li><strong>O7.</strong> Queda instalada en <code>skills/concuerda-docs-diagramas/</code> (repo), <code>~/.opencode/skills/</code> y <code>~/.agents/skills/</code>, y empaquetada como <code>concuerda-docs-diagramas.skill</code> (verificable con <code>ls</code> y <code>unzip -l</code>).</li>
+  </ul>
+
+  <h2>§3 Fuera de alcance</h2>
+  <ul>
+    <li>No se edita el <code>.drawio</code> (se mantiene a mano en draw.io) ni las migraciones SQL (checksums de Flyway; cambiarlos sin proceso rompe el historial).</li>
+    <li>No se crean migraciones nuevas para alinear el modelo (eso es el trabajo "Alinear el modelo de datos", con la migración V3).</li>
+    <li>No se valida que el modelo cumpla los requisitos del dominio (eso es <code>traza-requisitos-modelo</code>) ni las convenciones del diccionario —auditoría, DANE, enums en español— (eso es <code>valida-diccionario-datos</code>).</li>
+    <li>No se audita la coherencia de <code>AGENTS.md</code>/<code>docs/</code> contra el árbol (eso es <code>audita-agents-md</code>).</li>
+  </ul>
+
+  <h2>§4 Diseño</h2>
+  <p>
+    La skill ejecuta 5 pasos: inventariar y leer las tres fuentes, normalizar los elementos de cada una, comparar cruzado
+    por par, emitir la tabla drift agrupada por tipo de elemento y —en modo corrección, con confirmación por fila— actualizar
+    la md y re-auditar. Reglas de contraste: la md es la <strong>referencia de estructura</strong>; las migraciones son la
+    <strong>verdad operativa</strong> (lo realmente implementado); cuando md y migraciones conflictúan, se corrige la md.
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="diag-titulo diag-desc">
+      <title id="diag-titulo">Flujo de auditoría de concordancia del modelo de datos</title>
+      <desc id="diag-desc">Cinco pasos: leer fuentes, normalizar, comparar cruzado, reportar drift, corregir md con confirmación.</desc>
+      <defs>
+        <marker id="flecha2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 z" fill="#0b3d2e"/>
+        </marker>
+      </defs>
+      <rect x="10" y="90" width="135" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="77" y="116" text-anchor="middle" font-size="13" fill="#1f2933">1· Leer fuentes</text>
+      <text x="77" y="134" text-anchor="middle" font-size="11" fill="#52606d">md · drawio · SQL</text>
+
+      <rect x="165" y="90" width="135" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="232" y="116" text-anchor="middle" font-size="13" fill="#1f2933">2· Normalizar</text>
+      <text x="232" y="134" text-anchor="middle" font-size="11" fill="#52606d">entidades/atributos/enums</text>
+
+      <rect x="320" y="90" width="135" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="387" y="116" text-anchor="middle" font-size="13" fill="#1f2933">3· Comparar pares</text>
+      <text x="387" y="134" text-anchor="middle" font-size="11" fill="#52606d">md↔drawio · md↔SQL · drawio↔SQL</text>
+
+      <rect x="475" y="90" width="135" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="542" y="116" text-anchor="middle" font-size="13" fill="#1f2933">4· Tabla drift</text>
+      <text x="542" y="134" text-anchor="middle" font-size="11" fill="#52606d">sin modificar nada</text>
+
+      <rect x="630" y="90" width="120" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="690" y="116" text-anchor="middle" font-size="13" fill="#1f2933">5· Corregir md</text>
+      <text x="690" y="134" text-anchor="middle" font-size="11" fill="#52606d">confirmado por fila</text>
+
+      <line x1="145" y1="120" x2="158" y2="120" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flecha2)"/>
+      <line x1="300" y1="120" x2="313" y2="120" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flecha2)"/>
+      <line x1="455" y1="120" x2="468" y2="120" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flecha2)"/>
+      <line x1="610" y1="120" x2="623" y2="120" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flecha2)"/>
+    </svg>
+    <figcaption>Figura 1 — Flujo de auditoría de concordancia del modelo de datos</figcaption>
+  </figure>
+
+  <p><strong>Reglas que debe codificar la skill:</strong></p>
+  <ul>
+    <li><strong>Normalización:</strong> los elementos se representan de forma única por fuente: <em>entidad</em> (nombre canónico), <em>atributo</em> (nombre + marca PK/FK + tipo), <em>relación</em> (origen → destino + cardinalidad), <em>enum</em> (conjunto de valores). Dos fuentes dicen lo mismo solo si el elemento coincide en estructura.</li>
+    <li><strong>Comparación cruzada:</strong> para cada elemento, los tres pares se recorren; una fila drift describe el par que discrepa y en qué tipo de elemento es.</li>
+    <li><strong>drawio (XML):</strong> se parsean las celdas <code>&lt;mxCell&gt;</code> con <code>value</code>: celdas compuestas = tablas (entidades) y sus filas internas = atributos; aristas <code>mxCell edge</code> con etiquetas = relaciones. Nunca se abre draw.io, nunca se renombra nada en el archivo.</li>
+    <li><strong>SQL:</strong> se extraen <code>CREATE TABLE</code>, columnas con tipo, <code>FOREIGN KEY</code>, restricciones y <code>CREATE TYPE</code> (enums).</li>
+    <li><strong>Enums:</strong> los valores de enum se comparan solo entre md y SQL; el drawio no está obligado a listar valores de enum (los diagramas visuales no los suelen mostrar).</li>
+    <li><strong>Agrupación del reporte:</strong> por tipo de elemento (entidad, atributo, tipo, relación, cardinalidad, enum) con total numérico al inicio y filas completas después.</li>
+  </ul>
+
+  <h2>§5 Casos borde</h2>
+  <table>
+    <thead><tr><th>Caso</th><th>Comportamiento esperado</th></tr></thead>
+    <tbody>
+      <tr><td><code>data-model-er.drawio</code> ausente o sin celdas con <code>value</code></td><td>Drift "sin diagrama": se reporta y se pregunta si debe crearse (crearlo queda fuera del alcance read-only).</td></tr>
+      <tr><td>XML del <code>.drawio</code> corrupto o no parseable</td><td>Se reporta el error de parseo y se auditan los pares restantes (md↔SQL) sin abortar.</td></tr>
+      <tr><td>La md no documenta entidades RBAC que las migraciones crean</td><td>Fila de drift en md↔SQL; corrección sugerida: documentar en la md las entidades reales.</td></tr>
+      <tr><td>La md documenta entidades MVP sin migración creada</td><td>Fila de drift con corrección "migración pendiente"; no se corrige la md (la md no miente, el SQL no se ha escrito).</td></tr>
+      <tr><td>Misma entidad con tipo distinto según fuente</td><td>Fila de drift de tipo; el conflicto md↔SQL se resuelve corrigiendo la md (verdad operativa).</td></tr>
+      <tr><td>Relación sin cardinalidad en el drawio</td><td>Fila de drift de cardinalidad (el diagrama estricto debe declararla).</td></tr>
+      <tr><td>Enum sin valores en el drawio</td><td>No genera drift: los enums se comparan solo entre md y SQL.</td></tr>
+      <tr><td>Reporte con muchas discrepancias</td><td>Resumen numérico por tipo al inicio; lista completa después; no se bajan las filas.</td></tr>
+      <tr><td>Corrección confirmada de la md que rompe otra sección</td><td>El re-audit lo detecta; las correcciones se aplican fila por fila, no en bloque.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>§6 Criterios de aceptación</h2>
+  <table>
+    <thead><tr><th>#</th><th>Criterio (comprobación ejecutable)</th><th>Sí / No</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Existe <code>skills/concuerda-docs-diagramas/SKILL.md</code> con frontmatter <code>name: concuerda-docs-diagramas</code> y <code>description</code> en una sola línea, sin TODO ni placeholders.</td><td class="si-no">☐</td></tr>
+      <tr><td>2</td><td>Instalada en <code>~/.opencode/skills/concuerda-docs-diagramas/</code>, <code>~/.agents/skills/concuerda-docs-diagramas/</code> y empaquetada como <code>concuerda-docs-diagramas.skill</code> (verificable con <code>unzip -l</code>).</td><td class="si-no">☐</td></tr>
+      <tr><td>3</td><td>Ejecutada en read-only sobre este repo, la tabla drift trae entidades RBAC de las migraciones sin documentar y entidades MVP de la md sin migración.</td><td class="si-no">☐</td></tr>
+      <tr><td>4</td><td>El reporte incluye los elementos extraídos del <code>.drawio</code> (prueba de que el XML se parseó) y compara los tres pares de fuentes.</td><td class="si-no">☐</td></tr>
+      <tr><td>5</td><td>Tras la auditoría read-only, <code>git status</code> queda limpio, incluidos <code>docs/02-data/data-model-er.drawio</code> y <code>backend/src/main/resources/db/migration/</code>.</td><td class="si-no">☐</td></tr>
+      <tr><td>6</td><td>Ninguna edición se aplica sin confirmación; en modo corrección solo se edita la md y por fila confirmada.</td><td class="si-no">☐</td></tr>
+      <tr><td>7</td><td>Tras confirmar filas, el re-audit reporta 0 drift en las filas corregidas.</td><td class="si-no">☐</td></tr>
+      <tr><td>8</td><td>El <code>.drawio</code> y las migraciones SQL no se modifican nunca (verificable por <code>git status</code> tras el modo corrección).</td><td class="si-no">☐</td></tr>
+      <tr><td>9</td><td>No se cree ni se altere ninguna migración nueva en este trabajo (la alineación es el trabajo de la migración V3).</td><td class="si-no">☐</td></tr>
+      <tr><td>10</td><td>No hubo commits sobre <code>main</code> ni deploys dentro de este trabajo.</td><td class="si-no">☐</td></tr>
+    </tbody>
+  </table>
+
+  <h2>§7 Decisiones</h2>
+  <table>
+    <thead><tr><th>Duda que apareció</th><th>Se eligió</th><th>Se descartó</th><th>Por qué</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Vías de comparación</td>
+        <td>Tres vías: md ↔ drawio ↔ migraciones</td>
+        <td>Comparar solo md vs drawio</td>
+        <td>Las migraciones son la implementación real; excluir SQL deja el drift silencioso entre el doc y lo que está deployeado.</td>
+      </tr>
+      <tr>
+        <td>Comportamiento: ¿corrige?</td>
+        <td>Reporte read-only + corrección de la md con confirmación por fila</td>
+        <td>Solo reporte; corrección de drawio o SQL</td>
+        <td>Corregir la fuente única cuando la realidad (SQL) la desmiente evita reabrirlo a mano; drawio y SQL son inmutables aquí por edición manual y checksums de Flyway.</td>
+      </tr>
+      <tr>
+        <td>Profundidad del diagrama</td>
+        <td>Estricto: entidades, atributos con tipo, PK/FK y cardinalidades</td>
+        <td>Solo presencia de entidades y relaciones</td>
+        <td>Un diagrama incompleto genera decisiones erróneas de diseño; el costo de parsear el XML es bajo.</td>
+      </tr>
+      <tr>
+        <td>Conflicto md vs migraciones</td>
+        <td>Las migraciones son la verdad operativa; se corrige la md</td>
+        <td>Primar la md y planificar una migración de alineación</td>
+        <td>Escribir SQL está fuera de alcance de la skill; documentar lo implementado es la acción segura. La migración V3 queda para el trabajo de alineación del modelo.</td>
+      </tr>
+      <tr>
+        <td>Enums en el drawio</td>
+        <td>Los valores de enum se comparan solo entre md y SQL</td>
+        <td>Exigir listas de valores de enum en el diagrama</td>
+        <td>Los diagramas visuales rara vez listan valores de enum; exigirlo generaría ruido permanente.</td>
+      </tr>
+      <tr>
+        <td>Límite de la corrección</td>
+        <td>Solo se edita <code>data-model-mvp.md</code></td>
+        <td>Editar drawio o SQL</td>
+        <td>Los re-nombramientos de diagrama pertenecen al dueño en draw.io; el SQL exige proceso de migración con checksums.</td>
+      </tr>
+    </tbody>
+  </table>
+
+</body>
+</html>

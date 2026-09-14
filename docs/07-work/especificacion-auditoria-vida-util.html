@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Especificación: Skill auditoria-vida-util</title>
+  <style>
+    :root { color-scheme: light; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      max-width: 880px; margin: 0 auto; padding: 2rem 1.5rem;
+      line-height: 1.55; color: #1f2933;
+    }
+    h1 { font-size: 1.6rem; border-bottom: 3px solid #0b3d2e; padding-bottom: .4rem; }
+    h2 { font-size: 1.15rem; margin-top: 2.4rem; border-left: 4px solid #0b3d2e; padding-left: .6rem; }
+    p, li { margin: .4rem 0; }
+    code { background: #eef3f0; padding: .1rem .3rem; border-radius: 4px; font-size: .92em; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .95rem; }
+    th, td { border: 1px solid #cbd2d9; padding: .5rem .6rem; text-align: left; vertical-align: top; }
+    th { background: #eef3f0; }
+    .si-no { text-align: center; width: 4.5rem; white-space: nowrap; }
+    svg { max-width: 100%; height: auto; display: block; margin: 1rem auto; }
+    figure { margin: 1rem 0; }
+    figcaption { font-size: .9rem; color: #52606d; text-align: center; margin-top: .4rem; }
+  </style>
+</head>
+<body>
+
+  <h1>Especificación: Skill auditoria-vida-util</h1>
+
+  <h2>§1 Resumen</h2>
+  <p>
+    Construir el <strong>orquestador</strong> de la familia de auditoría: una skill que ejecuta en secuencia las cuatro
+    skills ya construidas (<code>traza-requisitos-modelo</code>, <code>valida-diccionario-datos</code>,
+    <code>concuerda-docs-diagramas</code>, <code>audita-agents-md</code>) y consolida sus drifts en una
+    <strong>matriz de conformidad por capa del ciclo de vida</strong> (requisitos · análisis · diseño/arquitectura ·
+    esquema/BD · código + gobernanza transversal). Es la respuesta de un vistazo a "¿estamos cumpliendo la vida útil del
+    software?", entregada como informe HTML fechado y verificable, sin que nadie tenga que leer cuatro reportes.
+  </p>
+
+  <h2>§2 Objetivos</h2>
+  <ul>
+    <li><strong>O1.</strong> Existe <code>skills/auditoria-vida-util/SKILL.md</code> con frontmatter <code>name: auditoria-vida-util</code> y <code>description</code> en una sola línea, sin placeholders ni TODO.</li>
+    <li><strong>O2.</strong> La skill ejecuta en secuencia (modo read-only) las cuatro skills de la familia, recoge sus drifts y los consolida sin duplicarlos: cada drift se atribuye a una capa y a su skill de origen.</li>
+    <li><strong>O3.</strong> Produce la matriz de las 5 capas fijas — requiritos, análisis, diseño/arquitectura, esquema/BD, código — más una fila transversal de gobernanza (resultado de <code>audita-agents-md</code>). Cada fila lleva su veredicto.</li>
+    <li><strong>O4.</strong> Escala de veredicto por capa: <em>conforme</em> (0 drifts de sus skills), <em>desviado</em> (≥1 drift, con conteo de críticos vs menores) y <em>sin llegar</em> (capa sin fuentes). Además un veredicto global agregado con la regla de agregación documentada.</li>
+    <li><strong>O5.</strong> Entrega un HTML autocontenido y fechado en <code>docs/07-work/informe-vida-util-YYYY-MM-DD.html</code> + un resumen corto en consola (veredicto global y una línea por capa).</li>
+    <li><strong>O6.</strong> La ejecución no modifica ninguna fuente existente: <code>git status</code> tras la auditoría solo muestra el informe nuevo. El orquestador jamás corrige; para corregir se usa la skill individual correspondiente.</li>
+    <li><strong>O7.</strong> Al regenerar el informe después de aplicar correcciones con las skills individuales, la matriz debe reflejar el cambio (disminución de capas <em>desviadas</em>), sin que el orquestador toque nada.</li>
+    <li><strong>O8.</strong> Queda instalada en <code>skills/auditoria-vida-util/</code> (repo), <code>~/.opencode/skills/</code> y <code>~/.agents/skills/</code>, y empaquetada como <code>auditoria-vida-util.skill</code> (verificable con <code>ls</code> y <code>unzip -l</code>).</li>
+  </ul>
+
+  <h2>§3 Fuera de alcance</h2>
+  <ul>
+    <li>No corrige nada: la corrección siempre ocurre con la skill individual de la capa afectada (por ejemplo <code>valida-diccionario-datos</code> para el esquema, <code>audita-agents-md</code> para gobernanza).</li>
+    <li>No define severidad más allá de crítico/menor según la skill de origen; no inventa pesos entre capas.</li>
+    <li>No audita código implementado: hoy no hay skill ni insumo (backend/frontend scaffold); la capa código queda <em>sin llegar</em>.</li>
+    <li>No reemplaza las skills individuales: cada una sigue usándose de forma independiente para el detalle.</li>
+    <li>No detecta ni inventa drifts propios: se limita a consolidar lo que las cuatro skills reportan.</li>
+  </ul>
+
+  <h2>§4 Diseño</h2>
+  <p>
+    La skill ejecuta 5 pasos: preparar (fecha, presencia de skills y fuentes), correr <code>traza-requisitos-modelo</code>
+    (capas requisitos y diseño + patrones y huérfanos), correr <code>valida-diccionario-datos</code> y
+    <code>concuerda-docs-diagramas</code> (capas análisis y esquema/BD), correr <code>audita-agents-md</code>
+    (gobernanza) y declarar la capa código —sin insumo hoy— como <em>sin llegar</em>, y consolidar la matriz con
+    veredictos y emitir el informe HTML + resumen consola. El informe queda en <code>docs/07-work/</code> con fecha en el nombre.
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 800 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="diag-titulo diag-desc">
+      <title id="diag-titulo">Flujo del orquestador de auditoría del ciclo de vida</title>
+      <desc id="diag-desc">Cinco pasos: preparar, traza, diccionario+concordancia, gobernanza, consolidar y emitir informe.</desc>
+      <defs>
+        <marker id="flecha5" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 z" fill="#0b3d2e"/>
+        </marker>
+      </defs>
+      <rect x="10" y="90" width="135" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="77" y="116" text-anchor="middle" font-size="13" fill="#1f2933">1· Preparar</text>
+      <text x="77" y="134" text-anchor="middle" font-size="11" fill="#52606d">fecha · skills · fuentes</text>
+
+      <rect x="165" y="90" width="155" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="242" y="116" text-anchor="middle" font-size="13" fill="#1f2933">2· traza-requisitos</text>
+      <text x="242" y="134" text-anchor="middle" font-size="11" fill="#52606d">→ requisitos · diseño</text>
+
+      <rect x="340" y="90" width="155" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="417" y="116" text-anchor="middle" font-size="13" fill="#1f2933">3· diccionario + concuerda</text>
+      <text x="417" y="134" text-anchor="middle" font-size="11" fill="#52606d">→ análisis · esquema/BD</text>
+
+      <rect x="515" y="90" width="135" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="582" y="116" text-anchor="middle" font-size="13" fill="#1f2933">4· audita-agents</text>
+      <text x="582" y="134" text-anchor="middle" font-size="11" fill="#52606d">→ gobernanza · código sin llegar</text>
+
+      <rect x="670" y="90" width="120" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="730" y="116" text-anchor="middle" font-size="13" fill="#1f2933">5· Consolidar</text>
+      <text x="730" y="134" text-anchor="middle" font-size="11" fill="#52606d">HTML fechado + resumen</text>
+
+      <line x1="145" y1="120" x2="158" y2="120" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flecha5)"/>
+      <line x1="320" y1="120" x2="333" y2="120" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flecha5)"/>
+      <line x1="495" y1="120" x2="508" y2="120" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flecha5)"/>
+      <line x1="650" y1="120" x2="663" y2="120" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flecha5)"/>
+    </svg>
+    <figcaption>Figura 1 — Flujo del orquestador de auditoría del ciclo de vida</figcaption>
+  </figure>
+
+  <p><strong>Reglas que debe codificar la skill:</strong></p>
+  <ul>
+    <li><strong>Atribución de drifts a capas:</strong> cada drift de cada skill se asigna a una capa fija (requisitos, análisis, diseño/arquitectura, esquema/BD, código) y se guarda su origen (skill y fila completa). Un drift no se copia a dos capas: se atribuye a la capa que representa.</li>
+    <li><strong>Veredicto por capa:</strong> <em>conforme</em> = 0 drifts; <em>desviado</em> = ≥1 drift, mostrando conteo de críticos y menores; <em>sin llegar</em> = capa sin fuentes (p. ej. código con backend/frontend scaffold).</li>
+    <li><strong>Crítico vs menor:</strong> se hereda la calificación de la skill de origen — las brechas de alcance, convenciones rotas en SQL y migraciones desalineadas son críticos; naming, huérfanos sin implicación y detalles documentales son menores.</li>
+    <li><strong>Veredicto global:</strong> regla documentada en el informe: global <em>conforme</em> solo si las 5 capas son <em>conforme</em> (o todo <em>sin llegar</em>); si ≥1 capa sin llegar y el resto conforme, <em>parcial</em>; cualquier <em>desviado</em> hace el global <em>desviado</em>.</li>
+    <li><strong>Gobernanza como transversal:</strong> la fila de gobernanza (resultado de <code>audita-agents-md</code>) no cuenta como la 6ª capa: es transversal y se presenta junto a la matriz.</li>
+    <li><strong>No evalúa sin skill:</strong> si una skill de la familia no está instalada, su capa queda <em>no evaluable</em> y el informe lo declara explícitamente.</li>
+  </ul>
+
+  <h2>§5 Casos borde</h2>
+  <table>
+    <thead><tr><th>Caso</th><th>Comportamiento esperado</th></tr></thead>
+    <tbody>
+      <tr><td>Falla la ejecución de una skill intermedia</td><td>Se continúa con las demás; la capa de la skill fallida queda <em>no evaluable</em> y el informe lo declara.</td></tr>
+      <tr><td>Skill de la familia no instalada</td><td>La capa correspondiente queda <em>no evaluable</em>; el informe lista la skill ausente. El global declara "evaluación parcial".</td></tr>
+      <tr><td>Una fuente de una capa no existe</td><td>La capa queda <em>sin llegar</em>; no se rellena con nada inventado.</td></tr>
+      <tr><td>Dos informes con la misma fecha</td><td>Si <code>informe-vida-util-YYYY-MM-DD.html</code> ya existe, se escribe su variante con sufijo <code>-2</code>, <code>-3</code>…, sin sobrescribir el anterior.</td></tr>
+      <tr><td>Working tree sucio antes de la auditoría</td><td>Se anota al pie del informe; no se trata como drift de fuentes.</td></tr>
+      <tr><td>Todo conforme (futuro deseado)</td><td>Las 5 capas en <em>conforme</em>, global <em>conforme</em>, con el conteo de drifts en 0.</td></tr>
+      <tr><td>Capas mezcladas sin llegar y desviadas</td><td>La regla del veredicto global prevalece: cualquier <em>desviado</em> hace el global <em>desviado</em>.</td></tr>
+      <tr><td>Informe muy largo</td><td>La matriz va primero (una línea por capa + veredicto global), y el detalle de drifts por capa después.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>§6 Criterios de aceptación</h2>
+  <table>
+    <thead><tr><th>#</th><th>Criterio (comprobación ejecutable)</th><th>Sí / No</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Existe <code>skills/auditoria-vida-util/SKILL.md</code> con frontmatter <code>name: auditoria-vida-util</code> y <code>description</code> en una sola línea, sin TODO ni placeholders.</td><td class="si-no">☐</td></tr>
+      <tr><td>2</td><td>Instalada en <code>~/.opencode/skills/auditoria-vida-util/</code> y <code>~/.agents/skills/auditoria-vida-util/</code>, empaquetada como <code>auditoria-vida-util.skill</code> (verificable con <code>unzip -l</code>).</td><td class="si-no">☐</td></tr>
+      <tr><td>3</td><td>Ejecutada sobre este repo, produce <code>docs/07-work/informe-vida-util-YYYY-MM-DD.html</code> y una matriz con las 5 capas fijas más la fila de gobernanza.</td><td class="si-no">☐</td></tr>
+      <tr><td>4</td><td>Cada fila de la matriz tiene su veredicto (conforme/desviado/sin llegar) y la capa código queda <em>sin llegar</em> con el backend/frontend scaffold actual.</td><td class="si-no">☐</td></tr>
+      <tr><td>5</td><td>El informe lista el veredicto global con su regla de agregación y los conteos de críticos/menores por capa.</td><td class="si-no">☐</td></tr>
+      <tr><td>6</td><td>Tras la ejecución, <code>git status</code> solo muestra el informe nuevo (ninguna fuente existente modificada).</td><td class="si-no">☐</td></tr>
+      <tr><td>7</td><td>El orquestador no ofrece ni aplica correcciones en ninguna ejecución (si el usuario quiere corregir, se usa la skill individual).</td><td class="si-no">☐</td></tr>
+      <tr><td>8</td><td>El informe hace referencia a la skill de origen de cada drift (por ejemplo, naming del esquema → <code>valida-diccionario-datos</code>).</td><td class="si-no">☐</td></tr>
+      <tr><td>9</td><td>No hubo commits sobre <code>main</code> ni deploys dentro de este trabajo.</td><td class="si-no">☐</td></tr>
+    </tbody>
+  </table>
+
+  <h2>§7 Decisiones</h2>
+  <table>
+    <thead><tr><th>Duda que apareció</th><th>Se eligió</th><th>Se descartó</th><th>Por qué</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Capas del ciclo de vida</td>
+        <td>5 fijas: requisitos, análisis, diseño/arquitectura, esquema/BD, código</td>
+        <td>Capas dinámicas según lo que exista</td>
+        <td>Capas fijas hacen el informe comparable entre fechas; una capa sin insumo dice "sin llegar" en vez de desaparecer del mapa.</td>
+      </tr>
+      <tr>
+        <td>Salida del informe</td>
+        <td>HTML autocontenido fechado en <code>docs/07-work</code> + resumen en consola</td>
+        <td>Solo consola</td>
+        <td>Un informe versionado y fechado permite ver la evolución de la conformidad en el tiempo sin perder nada.</td>
+      </tr>
+      <tr>
+        <td>Escala de veredicto</td>
+        <td>3 estados + conteo de críticos/menores + veredicto global con regla</td>
+        <td>Conforme/desviado binario</td>
+        <td>El estado intermedio <em>sin llegar</em> y los conteos distinguen "hay que trabajar" de "aún no se empezó".</td>
+      </tr>
+      <tr>
+        <td>Corrección desde el orquestador</td>
+        <td>Solo audita; corrige la skill individual de la capa</td>
+        <td>Corrección orquestada</td>
+        <td>El orquestador consolida sin efectos laterales; la corrección mantiene la confirmación por fila de cada skill y evita corregir a ciegas de golpe.</td>
+      </tr>
+      <tr>
+        <td>Situación de la capa código</td>
+        <td>Backend/frontend scaffold → <em>sin llegar</em></td>
+        <td>Inventar una evaluación de código</td>
+        <td>No hay skill de auditoría de código ni entidades implementadas; evaluar algo que no existe sería ruido.</td>
+      </tr>
+      <tr>
+        <td>Gobernanza</td>
+        <td>Fila transversal aparte (resultado de <code>audita-agents-md</code>)</td>
+        <td>Convertirla en la 6ª capa</td>
+        <td>La coherencia de AGENTS.md afecta a todas las capas; presentarla como transversal evita contar dos veces sus drifts en el conteo de capas.</td>
+      </tr>
+    </tbody>
+  </table>
+
+</body>
+</html>
