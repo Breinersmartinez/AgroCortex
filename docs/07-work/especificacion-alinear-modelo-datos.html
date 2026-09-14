@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Especificación: Alinear el modelo de datos RBAC</title>
+  <style>
+    :root { color-scheme: light; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      max-width: 880px; margin: 0 auto; padding: 2rem 1.5rem;
+      line-height: 1.55; color: #1f2933;
+    }
+    h1 { font-size: 1.6rem; border-bottom: 3px solid #0b3d2e; padding-bottom: .4rem; }
+    h2 { font-size: 1.15rem; margin-top: 2.4rem; border-left: 4px solid #0b3d2e; padding-left: .6rem; }
+    p, li { margin: .4rem 0; }
+    code { background: #eef3f0; padding: .1rem .3rem; border-radius: 4px; font-size: .92em; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .95rem; }
+    th, td { border: 1px solid #cbd2d9; padding: .5rem .6rem; text-align: left; vertical-align: top; }
+    th { background: #eef3f0; }
+    .si-no { text-align: center; width: 4.5rem; white-space: nowrap; }
+    svg { max-width: 100%; height: auto; display: block; margin: 1rem auto; }
+    figure { margin: 1rem 0; }
+    figcaption { font-size: .9rem; color: #52606d; text-align: center; margin-top: .4rem; }
+  </style>
+</head>
+<body>
+
+  <h1>Especificación: Alinear el modelo de datos RBAC</h1>
+
+  <h2>§1 Resumen</h2>
+  <p>
+    Alinear las migraciones RBAC (<code>V1</code>/<code>V2</code>) con las convenciones del modelo
+    de datos: renombrar las columnas de auditoría al español (<code>creado_en</code>/<code>actualizado_en</code>),
+    renombrar los permisos <code>FIELDS_*</code> a <code>SEMBRADIOS_*</code> y completar los permisos faltantes
+    (<code>EVIDENCE_UPDATE</code>, <code>DIAGNOSES_DELETE</code>, <code>RECOMMENDATIONS_DELETE</code>) con su
+    asignación a roles. Todo se resuelve con una migración nueva, aditiva e idempotente, sin tocar
+    <code>V1</code>/<code>V2</code> ni romper el historial de Flyway. Hoy las tablas <code>app_*</code> nacen en
+    inglés y con un catálogo incompleto, contradiciendo la fuente única <code>docs/02-data/data-model-mvp.md</code>;
+    quien toque el código mañana paga esa deuda en cada consulta.
+  </p>
+
+  <h2>§2 Objetivos</h2>
+  <ul>
+    <li><strong>O1.</strong> El cambio queda en una única migración nueva <code>V3__align_rbac_naming.sql</code>; <code>git diff</code> desde la rama base muestra solo ese archivo (V1/V2 intactas).</li>
+    <li><strong>O2.</strong> Las 3 tablas con auditoría (<code>app_users</code>, <code>app_roles</code>, <code>app_permissions</code>) exponen <code>creado_en</code> y <code>actualizado_en</code>, y dejan de exponer <code>created_at</code>/<code>updated_at</code> en <code>information_schema.columns</code>.</li>
+    <li><strong>O3.</strong> Cero códigos <code>FIELDS_*</code> en <code>app_permissions</code>; existen <code>SEMBRADIOS_CREATE/READ/UPDATE/DELETE</code> con sus ids originales.</li>
+    <li><strong>O4.</strong> La matriz queda simétrica: existen <code>EVIDENCE_UPDATE</code>, <code>DIAGNOSES_DELETE</code> y <code>RECOMMENDATIONS_DELETE</code> (ids contiguos <code>…0803</code>, <code>…1004</code>, <code>…1104</code>) y cada rol recibe los permisos nuevos según su perfil.</li>
+    <li><strong>O5.</strong> V3 aplica sin error tanto en una BD nueva (V1→V2→V3) como sobre una BD que ya tenía V1/V2 aplicadas (checksum sin cambios).</li>
+    <li><strong>O6.</strong> <code>flyway validate</code> devuelve OK y <code>flyway_schema_history</code> registra la fila V3 con checksum.</li>
+  </ul>
+
+  <h2>§3 Fuera de alcance</h2>
+  <ul>
+    <li>No se arregla el build roto (pin Flyway 13.5.0 vs Spring Boot 3.4.1 → <code>NoSuchMethodError</code>). Es prerrequisito documentado: esta migración se valida con el plugin Maven de Flyway o después de la spec de estabilización; no es defecto de esta entrega.</li>
+    <li>No se recupera ni se ajusta el módulo auth (entidades JPA de <code>feat/rbac-enterprise</code>). Queda documentada la dependencia: al recuperarlo hay que mapear los nombres nuevos.</li>
+    <li>No se rediseña el catálogo de permisos desde la vista de producto (fuera del MVP; requiere otra especificación).</li>
+    <li>No se crean las tablas del dominio MVP (Agricultor, Sembradio, Consulta…): no existen entidades aún; corresponde a la spec del MVP.</li>
+    <li>No se toca <code>db/agroCortex.sql</code>, el frontend, ni <code>main</code>.</li>
+  </ul>
+
+  <h2>§4 Diseño</h2>
+  <p>
+    El trabajo produce una sola migración versionada de Flyway. Flujo de 4 pasos:
+    (1) computar el delta real entre V1/V2 y <code>data-model-mvp.md</code>;
+    (2) escribir <code>V3__align_rbac_naming.sql</code> con los renames, el renombrado de códigos y los
+    permisos nuevos;
+    (3) aplicarla contra una BD PostgreSQL y dejar que Flyway la registre;
+    (4) verificar con el lote SQL del checklist de aceptación.
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="diagrama-titulo diagrama-desc">
+      <title id="diagrama-titulo">Flujo de alineación del modelo RBAC</title>
+      <desc id="diagrama-desc">Cuatro pasos: delta de naming, escribir V3, aplicar, verificar.</desc>
+      <defs>
+        <marker id="flecha" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 z" fill="#0b3d2e"/>
+        </marker>
+      </defs>
+      <rect x="10" y="80" width="155" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="87" y="108" text-anchor="middle" font-size="13" fill="#1f2933">1· Delta de naming</text>
+      <text x="87" y="126" text-anchor="middle" font-size="11" fill="#52606d">V1/V2 vs modelo</text>
+
+      <rect x="195" y="80" width="155" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="272" y="108" text-anchor="middle" font-size="13" fill="#1f2933">2· Escribir V3</text>
+      <text x="272" y="126" text-anchor="middle" font-size="11" fill="#52606d">renames + seed</text>
+
+      <rect x="380" y="80" width="155" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="457" y="108" text-anchor="middle" font-size="13" fill="#1f2933">3· Aplicar</text>
+      <text x="457" y="126" text-anchor="middle" font-size="11" fill="#52606d">Postgres + Flyway</text>
+
+      <rect x="565" y="80" width="145" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="637" y="108" text-anchor="middle" font-size="13" fill="#1f2933">4· Verificar</text>
+      <text x="637" y="126" text-anchor="middle" font-size="11" fill="#52606d">criterios Sí/No</text>
+
+      <line x1="165" y1="110" x2="188" y2="110" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flecha)"/>
+      <line x1="350" y1="110" x2="373" y2="110" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flecha)"/>
+      <line x1="535" y1="110" x2="558" y2="110" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flecha)"/>
+    </svg>
+    <figcaption>Figura 1 — Flujo de alineación del modelo RBAC</figcaption>
+  </figure>
+
+  <p><strong>Contenido concreto de V3</strong> (reglas de diseño, no el script final):</p>
+  <ul>
+    <li><code>ALTER TABLE</code> sobre <code>app_users</code>, <code>app_roles</code> y <code>app_permissions</code>: <code>created_at → creado_en</code>, <code>updated_at → actualizado_en</code>, conservando defaults existentes.</li>
+    <li><code>UPDATE app_permissions SET code='SEMBRADIOS_CREATE' WHERE code='FIELDS_CREATE'</code> (y READ/UPDATE/DELETE). Se renombra el <code>code</code>, nunca el <code>id</code>: los joins de <code>app_role_permissions</code> van por id y no se tocan.</li>
+    <li><code>INSERT … ON CONFLICT DO NOTHING</code> de los 3 permisos nuevos con ids contiguos (<code>…0803</code>, <code>…1004</code>, <code>…1104</code>).</li>
+    <li><code>INSERT … SELECT ON CONFLICT DO NOTHING</code> de asignaciones: <code>EVIDENCE_UPDATE</code> → AGRICULTOR y ADMIN; <code>DIAGNOSES_DELETE</code> y <code>RECOMMENDATIONS_DELETE</code> → AGRONOMO, EXTENSIONISTA y ADMIN.</li>
+    <li>Las tablas <code>app_*</code> se conservan como infra RBAC separada del modelo de dominio.</li>
+  </ul>
+
+  <h2>§5 Casos borde</h2>
+  <table>
+    <thead>
+      <tr><th>Caso</th><th>Comportamiento esperado</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>BD de dev con V1/V2 ya aplicadas (Neon)</td><td>V3 se aplica sobre el esquema existente; V1/V2 y sus checksums no cambian; <code>flyway validate</code> OK.</td></tr>
+      <tr><td>BD nueva (local de prueba)</td><td>Flyway ejecuta V1→V2→V3 en orden y la serie termina sin error.</td></tr>
+      <tr><td>La app no arranca por el pin de Flyway 13.5.0</td><td>Documentado como prerrequisito: V3 se valida con <code>mvn flyway:migrate</code> (el plugin es independiente del auto-config de Spring Boot) o después de la spec de estabilización.</td></tr>
+      <tr><td>Ya hay <code>FIELDS_*</code> usados en el código Java</td><td>Hoy el auth está fuera del árbol, así que no hay referencias runtime. La dependencia con el auth queda anotada para cuando se recupere desde <code>feat/rbac-enterprise</code>.</td></tr>
+      <tr><td>Renombrar el código de permisos rompe asignaciones</td><td>No: <code>app_role_permissions</code> referencia por <code>permission_id</code>, no por <code>code</code>; el <code>UPDATE</code> de códigos no altera ningún join.</td></tr>
+      <tr><td>Un rol queda sin permiso nuevo</td><td>V3 asigna explícitamente y el criterio de aceptación #6 lo comprueba con joins; si faltara una asignación, el rol "todo" de ADMIN quedaría incompleto y la verificación lo marca como No.</td></tr>
+      <tr><td>BD de prod</td><td>Aún no tiene tablas (app arranca sin entidades); V3 no impacta prod hasta que exista una BD real.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>§6 Criterios de aceptación</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Criterio (comprobación ejecutable)</th><th>Sí / No</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>Existe <code>backend/src/main/resources/db/migration/V3__align_rbac_naming.sql</code> y <code>git diff</code> contra la rama base muestra únicamente ese archivo nuevo (V1/V2 sin cambios).</td><td class="si-no">☐</td></tr>
+      <tr><td>2</td><td>En una BD PostgreSQL vacía, <code>mvn flyway:migrate</code> aplica V1→V2→V3 sin error y <code>mvn flyway:validate</code> devuelve OK.</td><td class="si-no">☐</td></tr>
+      <tr><td>3</td><td><code>SELECT column_name FROM information_schema.columns WHERE table_name IN ('app_users','app_roles','app_permissions')</code> contiene <code>creado_en</code> y <code>actualizado_en</code> y NO contiene <code>created_at</code> ni <code>updated_at</code>.</td><td class="si-no">☐</td></tr>
+      <tr><td>4</td><td><code>SELECT code FROM app_permissions</code> no devuelve ningún <code>FIELDS_%</code> y devuelve <code>SEMBRADIOS_CREATE</code>, <code>SEMBRADIOS_READ</code>, <code>SEMBRADIOS_UPDATE</code>, <code>SEMBRADIOS_DELETE</code>, <code>EVIDENCE_UPDATE</code>, <code>DIAGNOSES_DELETE</code>, <code>RECOMMENDATIONS_DELETE</code>.</td><td class="si-no">☐</td></tr>
+      <tr><td>5</td><td>Los nuevos permisos existen con ids <code>…0803</code>, <code>…1004</code> y <code>…1104</code>.</td><td class="si-no">☐</td></tr>
+      <tr><td>6</td><td>Join de <code>app_roles</code> × <code>app_role_permissions</code> × <code>app_permissions</code>: AGRICULTOR tiene <code>EVIDENCE_UPDATE</code>; AGRONOMO y EXTENSIONISTA tienen <code>DIAGNOSES_DELETE</code> y <code>RECOMMENDATIONS_DELETE</code>; ADMIN tiene los tres.</td><td class="si-no">☐</td></tr>
+      <tr><td>7</td><td>La matriz de Evidencia, Diagnóstico y Recomendación queda completa (CREATE/READ/UPDATE/DELETE) según cada perfil definido en V2.</td><td class="si-no">☐</td></tr>
+      <tr><td>8</td><td><code>flyway_schema_history</code> registra V3 y <code>flyway validate</code> no reporta checksums rotos.</td><td class="si-no">☐</td></tr>
+      <tr><td>9</td><td>No hubo commits sobre <code>main</code> ni deploys a Heroku/Vercel dentro de este trabajo.</td><td class="si-no">☐</td></tr>
+    </tbody>
+  </table>
+
+  <h2>§7 Decisiones</h2>
+  <table>
+    <thead>
+      <tr><th>Duda que apareció</th><th>Se eligió</th><th>Se descartó</th><th>Por qué</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Cómo cambia el esquema sin romper Flyway</td>
+        <td>Migración nueva <code>V3</code> aditiva</td>
+        <td>Reescribir V1/V2 y resetear dev; solo documentar la deuda</td>
+        <td>V1/V2 ya están aplicadas en dev y registradas en <code>flyway_schema_history</code>; reescribirlas rompería checksums y datos. "Solo documentar" no resuelve la contradicción con la fuente única.</td>
+      </tr>
+      <tr>
+        <td>Forma de los nombres nuevos</td>
+        <td>snake_case español (<code>creado_en</code>, <code>actualizado_en</code>, <code>SEMBRADIOS_*</code>)</td>
+        <td>camelCase literal del doc (<code>creadoEn</code>); mantener inglés (<code>created_at</code>, <code>FIELDS_*</code>)</td>
+        <td>snake_case es la convención SQL estándar, evita identificadores entrecomillados en Postgres y cumple el idioma de la fuente única; camelCase obliga a comillas en cada query y mantener inglés deja la deuda viva.</td>
+      </tr>
+      <tr>
+        <td>Permisos faltantes (<code>EVIDENCE_UPDATE</code>, <code>DIAGNOSES_DELETE</code>, <code>RECOMMENDATIONS_DELETE</code>)</td>
+        <td>Completar la matriz simétrica</td>
+        <td>Dejarlos como huecos; redefinir el catálogo desde producto</td>
+        <td>Un catálogo con huecos obliga a casos especiales en cada verificación; redefinirlo desde producto está fuera del MVP y merece su propia especificación.</td>
+      </tr>
+      <tr>
+        <td>El auth de <code>feat/rbac-enterprise</code> mapea estas tablas</td>
+        <td>Fuera de alcance; dependencia documentada</td>
+        <td>Recuperar y adaptar las entidades JPA del auth en este mismo trabajo</td>
+        <td>Recuperar el auth es otro trabajo con su propia decisión de producto; mezclarlo aquí infla esta entrega. Al recuperarlo, sus entidades deberán usar los nombres nuevos.</td>
+      </tr>
+      <tr>
+        <td>Las tablas <code>app_*</code> vs el modelo de dominio</td>
+        <td>Se conservan como infra RBAC separada</td>
+        <td>Fusionarlas o renombrarlas al dominio (Agricultor, Sembradio…)</td>
+        <td>Son dos conceptos distintos: quién puede acceder (RBAC) vs qué produce el negocio (dominio). Renombrarlas ahora sin entidades de dominio crearía un modelo fantasma.</td>
+      </tr>
+    </tbody>
+  </table>
+
+</body>
+</html>
