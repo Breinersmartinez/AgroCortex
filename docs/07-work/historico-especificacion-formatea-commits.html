@@ -27,7 +27,7 @@
   <h2>§1 Resumen</h2>
   <p>
     Construir una skill que <strong>sugiere y valida mensajes de commit</strong> del monorepo AgroCortex siguiendo
-    <code>docs/06-contribution/git-commit-prefixes.md</code> (Conventional Commits: <code>tipo[ámbito]: descripción</code>).
+    <code>docs/06-contribution/git-commit-prefixes.md</code> (Conventional Commits: <code>tipo(ámbito): descripción</code>).
     Analiza el diff y genera el mensaje con tipo y ámbito correctos, y comprueba mensajes ya escritos contra el formato.
     La skill <strong>nunca ejecuta <code>git commit</code></strong>: entrega el mensaje listo. La prueba de que hace falta:
     la convención existe en el doc pero nada la aplica ni la comprueba.
@@ -37,7 +37,7 @@
   <ul>
     <li><strong>O1.</strong> Existe <code>skills/formatea-commits/SKILL.md</code> con frontmatter <code>name: formatea-commits</code> y <code>description</code> en una sola línea, sin placeholders ni TODO.</li>
     <li><strong>O2.</strong> La fuente única del formato es <code>docs/06-contribution/git-commit-prefixes.md</code>: la skill la lee y si el doc cambia, la skill obedece el cambio (no tiene el formato copiado como dogma).</li>
-    <li><strong>O3.</strong> Modo generar: lee <code>git diff --staged</code> (y trabaja con el working tree si no hay staged) e infiere tipo + ámbito por componente y contenido; entrega un mensaje <code>tipo[ámbito]: verbo imperativo en minúsculas</code> en español, breve (≤50 caracteres el título).</li>
+    <li><strong>O3.</strong> Modo generar: lee <code>git diff --staged</code> (y trabaja con el working tree si no hay staged) e infiere tipo + ámbito por componente y contenido; entrega un mensaje <code>tipo(ámbito): verbo imperativo en minúsculas</code> en español, breve (≤50 caracteres el título).</li>
     <li><strong>O4.</strong> Modo validar: comprueba un mensaje dado contra el formato y reporta cada violación (tipo desconocido, falta de colon+espacio, mayúscula inicial, no-imperativo, título muy largo) con el mensaje corregido propuesto.</li>
     <li><strong>O5.</strong> La skill jamás ejecuta <code>git commit</code>, <code>amend</code> ni <code>push</code>: entrega el mensaje y le deja el commit al usuario.</li>
     <li><strong>O6.</strong> Instalada en <code>skills/formatea-commits/</code> (repo), <code>~/.opencode/skills/</code> y <code>~/.agents/skills/</code>, empaquetada como <code>formatea-commits.skill</code> (verificable con <code>unzip -l</code>).</li>
@@ -126,7 +126,7 @@
     <tbody>
       <tr><td>1</td><td>Existe <code>skills/formatea-commits/SKILL.md</code> con frontmatter <code>name: formatea-commits</code> y <code>description</code> en una sola línea, sin TODO ni placeholders.</td><td class="si-no">☐</td></tr>
       <tr><td>2</td><td>Instalada en <code>~/.opencode/skills/formatea-commits/</code>, <code>~/.agents/skills/formatea-commits/</code> y empaquetada <code>formatea-commits.skill</code> (verificable con <code>unzip -l</code>).</td><td class="si-no">☐</td></tr>
-      <tr><td>3</td><td>Ejecutada en modo generar sobre un staged real de este repo, entrega un mensaje con la forma <code>tipo[ámbito]: verbo imperativo en minúsculas</code> en español.</td><td class="si-no">☐</td></tr>
+      <tr><td>3</td><td>Ejecutada en modo generar sobre un staged real de este repo, entrega un mensaje con la forma <code>tipo(ámbito): verbo imperativo en minúsculas</code> en español.</td><td class="si-no">☐</td></tr>
       <tr><td>4</td><td>Un staged que solo toca <code>.github/workflows</code> produce <code>ci</code>; uno de docs puros produce <code>docs</code> (inferencia comprobable).</td><td class="si-no">☐</td></tr>
       <tr><td>5</td><td>Un mensaje <code>Feat(Auth): Agregar login</code> a validar se reporta con sus violaciones (tipo minúscula, ámbito minúscula, mayúscula inicial) y un mensaje corregido.</td><td class="si-no">☐</td></tr>
       <tr><td>6</td><td>Tras cualquier ejecución, <code>git log</code> no muestra commits nuevos: la skill nunca commitea.</td><td class="si-no">☐</td></tr>

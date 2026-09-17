@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Especificación: Skill traza-requisitos-modelo</title>
+  <title>Especificación: Skill traza-requisitos</title>
   <style>
     :root { color-scheme: light; }
     body {
@@ -26,7 +26,7 @@
 </head>
 <body>
 
-  <h1>Especificación: Skill traza-requisitos-modelo</h1>
+  <h1>Especificación: Skill traza-requisitos</h1>
 
   <h2>§1 Resumen</h2>
   <p>
@@ -41,14 +41,14 @@
 
   <h2>§2 Objetivos</h2>
   <ul>
-    <li><strong>O1.</strong> Existe <code>skills/traza-requisitos-modelo/SKILL.md</code> con frontmatter <code>name: traza-requisitos-modelo</code> y <code>description</code> en una sola línea, sin placeholders ni TODO.</li>
+    <li><strong>O1.</strong> Existe <code>.opencode/skills/traza-requisitos/SKILL.md</code> con frontmatter <code>name: traza-requisitos</code> y <code>description</code> en una sola línea, sin placeholders ni TODO.</li>
     <li><strong>O2.</strong> La skill lee las cuatro fuentes: requisitos (<code>docs/01-architecture/agricultural-analysis.md</code>), capabilities (<code>docs/01-architecture/clean-architecture.md</code>), modelo de datos (<code>docs/02-data/data-model-mvp.md</code>) y patrones (<code>docs/02-data/possible-design-patterns.md</code>).</li>
     <li><strong>O3.</strong> La granularidad es por regla/restricción: cada restricción concreta del doc de requisitos es una fila de la matriz; ninguna sección queda tratada "en bruto" como un solo requisito.</li>
     <li><strong>O4.</strong> La traza es bidireccional: cada requisito lleva estado <em>cubierto / parcial / sin soporte</em> con la evidencia (capability, entidad/atributo, patrón); cada capability y cada entidad principal lleva su requisito de origen; los huérfanos en ambas direcciones se reportan.</li>
     <li><strong>O5.</strong> Los patrones participan como evidencia de soporte: cada capability con un patrón candidato de <code>possible-design-patterns.md</code>; una capability sin patrón asignable se reporta como brecha de diseño, no se inventa.</li>
     <li><strong>O6.</strong> En read-only no modifica ningún archivo: <code>git status</code> queda limpio. En modo corrección solo edita los docs de modelo/capabilities con confirmación por fila; el doc de requisitos nunca se toca.</li>
     <li><strong>O7.</strong> Un requisito sin soporte se marca como <em>brecha de alcance</em>: se reporta y se pregunta, jamás se inventa un soporte plausible para tapar la brecha.</li>
-    <li><strong>O8.</strong> Queda instalada en <code>skills/traza-requisitos-modelo/</code> (repo), <code>~/.opencode/skills/</code> y <code>~/.agents/skills/</code>, y empaquetada como <code>traza-requisitos-modelo.skill</code> (verificable con <code>ls</code> y <code>unzip -l</code>).</li>
+    <li><strong>O8.</strong> Queda instalada en <code>.opencode/skills/traza-requisitos/</code> (repo), <code>~/.opencode/skills/</code> y <code>~/.agents/skills/</code>.</li>
   </ul>
 
   <h2>§3 Fuera de alcance</h2>
@@ -56,7 +56,7 @@
     <li>No se modifica el doc de requisitos: las restricciones del dominio son decisiones del dueño, no erratas corregibles por la skill.</li>
     <li>No se crean capabilities ni entidades para cerrar brechas: la trazabilidad reporta; el diseño lo decide el dueño.</li>
     <li>No se definen los patrones (eso vive en <code>possible-design-patterns.md</code> y <code>clean-architecture.md</code>); la skill solo los asigna como evidencia.</li>
-    <li>No se detecta drift entre modelo y SQL/diagrama (eso es <code>valida-diccionario-datos</code> y <code>concuerda-docs-diagramas</code>), ni coherencia de AGENTS.md contra el árbol (es <code>audita-agents-md</code>).</li>
+    <li>No se detecta drift entre modelo y SQL/diagrama ni conformidad con las convenciones (eso es <code>audita-modelo-datos</code>), ni coherencia de la documentación de gobierno contra el árbol (es <code>audita-contexto</code>).</li>
   </ul>
 
   <h2>§4 Diseño</h2>
@@ -135,8 +135,8 @@
   <table>
     <thead><tr><th>#</th><th>Criterio (comprobación ejecutable)</th><th>Sí / No</th></tr></thead>
     <tbody>
-      <tr><td>1</td><td>Existe <code>skills/traza-requisitos-modelo/SKILL.md</code> con frontmatter <code>name: traza-requisitos-modelo</code> y <code>description</code> en una sola línea, sin TODO ni placeholders.</td><td class="si-no">☐</td></tr>
-      <tr><td>2</td><td>Instalada en <code>~/.opencode/skills/traza-requisitos-modelo/</code> y <code>~/.agents/skills/traza-requisitos-modelo/</code>, empaquetada como <code>traza-requisitos-modelo.skill</code> (verificable con <code>unzip -l</code>).</td><td class="si-no">☐</td></tr>
+      <tr><td>1</td><td>Existe <code>.opencode/skills/traza-requisitos/SKILL.md</code> con frontmatter <code>name: traza-requisitos</code> y <code>description</code> en una sola línea, sin TODO ni placeholders.</td><td class="si-no">☐</td></tr>
+      <tr><td>2</td><td>Instalada en <code>.opencode/skills/traza-requisitos/</code> (repo), <code>~/.opencode/skills/traza-requisitos/</code> y <code>~/.agents/skills/traza-requisitos/</code>.</td><td class="si-no">☐</td></tr>
       <tr><td>3</td><td>Ejecutada en read-only sobre este repo, la matriz incluye una fila por cada restricción/regla concreta de <code>agricultural-analysis.md</code>, cada una con su referencia de origen.</td><td class="si-no">☐</td></tr>
       <tr><td>4</td><td>Cada fila lleva estado <em>cubierto / parcial / sin soporte</em> y, cuando aplica, la evidencia por nombre (capability + entidad/atributo + patrón).</td><td class="si-no">☐</td></tr>
       <tr><td>5</td><td>La traza inversa cubre cada capability y entidad principal del modelo con su requisito de origen, o la marca "origen: convención/arquitectura", o la reporta huérfana.</td><td class="si-no">☐</td></tr>
