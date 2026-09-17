@@ -33,16 +33,17 @@
     Construir una skill (formato Agent Skills) que audita la coherencia de <code>AGENTS.md</code> y
     de <code>docs/</code> contra el árbol real del repositorio, produce una tabla de "drift"
     (doc dice / árbol tiene / corrección) y, solo con confirmación humana, aplica las correcciones a
-    <code>AGENTS.md</code>. La prueba de que hace falta: esta sesión encontró que <code>AGENTS.md</code> describía
-    <code>k8s/</code> y <code>monitoring/</code> como vacíos y al backend sin dependencias, cuando el árbol decía lo
-    contrario; ningún agente lo detectó antes de tomar decisiones sobre esa información.
+    <code>AGENTS.md</code>. La prueba de que hace falta: <code>AGENTS.md</code> describía como vacíos
+    directorios que no existían o no coincidían con el árbol, y al backend sin dependencias cuando
+    el árbol decía lo contrario; ningún agente lo detectó antes de tomar decisiones sobre esa
+    información.
   </p>
 
   <h2>§2 Objetivos</h2>
   <ul>
     <li><strong>O1.</strong> Existe <code>.opencode/skills/audita-contexto/SKILL.md</code> con frontmatter <code>name: audita-contexto</code> y <code>description</code> en una sola línea, sin placeholders ni TODO (validable con la validación del estándar Agent Skills).</li>
     <li><strong>O2.</strong> La skill ejecuta la auditoría con el árbol versionado (<code>git ls-files</code>, <code>ls</code>, lectura de archivos) y emite la tabla drift con tres columnas: <em>doc dice / árbol tiene / corrección</em>, agrupada por categoría (archivos, convenciones, índices).</li>
-    <li><strong>O3.</strong> Ejecutada sobre este repo en modo read-only, detecta al menos: <code>k8s/</code> inexistente, <code>monitoring/</code> poblado, <code>backend/pom.xml</code> con deps de security/flyway/jwt, migraciones <code>V1__create_rbac.sql</code>/<code>V2__seed_rbac.sql</code>, <code>.mvn/wrapper</code> sin <code>mvnw</code>, y docs sin indexar en <code>docs/README.md</code>.</li>
+    <li><strong>O3.</strong> Ejecutada sobre este repo en modo read-only, emite la tabla drift con tres columnas y detecta los desajustes reales del árbol frente a la documentación (por ejemplo, <code>.mvn/wrapper</code> sin <code>mvnw</code>); si el árbol y la doc coinciden, no inventa drift.</li>
     <li><strong>O4.</strong> En modo read-only el reporte no modifica ningún archivo: <code>git status</code> queda limpio tras la auditoría.</li>
     <li><strong>O5.</strong> En modo corrección, ninguna edición se aplica sin confirmación explícita, y tras confirmar, el re-audit baja a 0 el drift de las filas corregidas.</li>
     <li><strong>O6.</strong> Queda instalada en <code>.opencode/skills/audita-contexto/</code> (repo), <code>~/.opencode/skills/</code> y <code>~/.agents/skills/</code>.</li>
@@ -135,7 +136,7 @@
     <tbody>
       <tr><td>1</td><td>Existe <code>.opencode/skills/audita-contexto/SKILL.md</code> con frontmatter <code>name: audita-contexto</code> y <code>description</code> en una sola línea, sin TODO ni placeholders.</td><td class="si-no">☐</td></tr>
       <tr><td>2</td><td>Instalada en <code>.opencode/skills/audita-contexto/</code> (repo), <code>~/.opencode/skills/audita-contexto/</code> y <code>~/.agents/skills/audita-contexto/</code>.</td><td class="si-no">☐</td></tr>
-      <tr><td>3</td><td>Ejecutada sobre este repo en modo read-only emite la tabla con columnas <em>doc dice / árbol tiene / corrección</em> y detecta las 6 desviaciones de O3.</td><td class="si-no">☐</td></tr>
+      <tr><td>3</td><td>Ejecutada sobre este repo en modo read-only emite la tabla con columnas <em>doc dice / árbol tiene / corrección</em> y reporta los desajustes reales sin inventar drift.</td><td class="si-no">☐</td></tr>
       <tr><td>4</td><td>Tras la auditoría read-only, <code>git status</code> queda limpio (no modificó ningún archivo).</td><td class="si-no">☐</td></tr>
       <tr><td>5</td><td>Sin confirmación explícita no se escribe ningún archivo: la skill lo demuestra devolviendo la lista de ediciones pendientes y esperando aprobación.</td><td class="si-no">☐</td></tr>
       <tr><td>6</td><td>Tras confirmar una o más filas, el re-audit reporta 0 drift en esas filas.</td><td class="si-no">☐</td></tr>
