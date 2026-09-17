@@ -22,6 +22,13 @@
 - Docs: filenames en inglés kebab-case, prefijo numérico por categoría (`docs/0X-*`), cada doc referencia a sus dependientes, assets en `docs/assets/`.
 - Workflows: acciones ancladas a commit SHA, con `[sha] # vX` de referencia. Despliegue: merge a `main` → `Deploy` (Heroku + Vercel), ambiente único; `main` protegida (PR + checks `CI`/`Security`/`Qodana`).
 
+## Harness de skills
+- **Fuente canónica:** `skills/` del repo, versionada en git. Los espejos instalados son `~/.opencode/skills/` y `~/.agents/skills/`.
+- **Regla de sync:** al cambiar una skill en `skills/`, se replica esa carpeta (no la raíz global, nunca `--delete`) en los dos espejos y se verifica que `md5sum skills/<skill>/SKILL.md` coincida con las dos copias. Sin sync, el entorno sigue cargando la versión vieja.
+- **Set canónico (7):** auditoría `traza-requisitos-modelo`, `valida-diccionario-datos`, `concuerda-docs-diagramas`, `audita-agents-md`, `auditoria-vida-util` (orquestador); productividad `crear-especificacion` (genera specs), `formatea-commits`.
+- **Specs:** toda skill salvo `crear-especificacion` tiene su spec en `docs/07-work/especificacion-<skill>.html` (criterio de aceptación de la skill).
+- **Archivadas** (eliminadas del árbol, recuperables por git): `documenta-codigo`, `deploy-heroku-springboot` — eran satélites sin dependencias con el núcleo.
+
 ## Que NO hacer
 - No hardcodear credenciales ni URLs de despliegue; `.env` y `*.env` están gitignored (solo `!*.env.example`).
 - No correr con perfil `prod` fuera de Heroku: sin las vars `PG*` la app muere (H10).

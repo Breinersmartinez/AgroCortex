@@ -37,6 +37,19 @@ Portal de documentación técnica del proyecto. Organizada por categorías funci
 |---|---|---|
 | [README.md](05-security/README.md) | Postura de seguridad: qué está automatizado, qué hay que configurar | CI/CD (04) · Workflows (03) |
 
+### 07 — Work
+
+| Documento | Qué es | Relacionado con |
+|---|---|---|
+| [especificacion-audita-agents-md.html](07-work/especificacion-audita-agents-md.html) | Spec de la skill `audita-agents-md` | Harness (`skills/`) |
+| [especificacion-auditoria-vida-util.html](07-work/especificacion-auditoria-vida-util.html) | Spec del orquestador `auditoria-vida-util` | Harness (`skills/`) |
+| [especificacion-concuerda-docs-diagramas.html](07-work/especificacion-concuerda-docs-diagramas.html) | Spec de la skill `concuerda-docs-diagramas` | Harness (`skills/`) |
+| [especificacion-formatea-commits.html](07-work/especificacion-formatea-commits.html) | Spec de la skill `formatea-commits` | Harness (`skills/`) |
+| [especificacion-traza-requisitos-modelo.html](07-work/especificacion-traza-requisitos-modelo.html) | Spec de la skill `traza-requisitos-modelo` | Harness (`skills/`) |
+| [especificacion-valida-diccionario-datos.html](07-work/especificacion-valida-diccionario-datos.html) | Spec de la skill `valida-diccionario-datos` | Harness (`skills/`) |
+| [especificacion-alinear-modelo-datos.html](07-work/especificacion-alinear-modelo-datos.html) | Encargo pendiente: migración V3 para alinear modelo RBAC | Modelo de datos (02) |
+| [informe-vida-util-2026-09-13.html](07-work/informe-vida-util-2026-09-13.html) | Informe consolidado de la auditoría (orquestador) | Harness (`skills/`) |
+
 ## Convenciones del portal
 
 - **Nombres de archivo**: inglés, `kebab-case`, una palabra de dominio por documento (no `despliegue-heroku.pdf`).
