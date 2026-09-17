@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Especificación: Skill audita-modelo-datos</title>
+  <style>
+    :root { color-scheme: light; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      max-width: 880px; margin: 0 auto; padding: 2rem 1.5rem;
+      line-height: 1.55; color: #1f2933;
+    }
+    h1 { font-size: 1.6rem; border-bottom: 3px solid #0b3d2e; padding-bottom: .4rem; }
+    h2 { font-size: 1.15rem; margin-top: 2.4rem; border-left: 4px solid #0b3d2e; padding-left: .6rem; }
+    p, li { margin: .4rem 0; }
+    code { background: #eef3f0; padding: .1rem .3rem; border-radius: 4px; font-size: .92em; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .95rem; }
+    th, td { border: 1px solid #cbd2d9; padding: .5rem .6rem; text-align: left; vertical-align: top; }
+    th { background: #eef3f0; }
+    .si-no { text-align: center; width: 4.5rem; white-space: nowrap; }
+    svg { max-width: 100%; height: auto; display: block; margin: 1rem auto; }
+    figure { margin: 1rem 0; }
+    figcaption { font-size: .9rem; color: #52606d; text-align: center; margin-top: .4rem; }
+  </style>
+</head>
+<body>
+
+  <h1>Especificación: Skill audita-modelo-datos</h1>
+
+  <h2>§1 Resumen</h2>
+  <p>
+    Construir una skill que verifica el modelo de datos del proyecto en dos planos diferenciados:
+    <strong>consistencia</strong> (la documentación de datos, el diagrama ER y las migraciones SQL describen el
+    mismo modelo) y <strong>conformidad</strong> (ese modelo cumple las convenciones del proyecto: PK, auditoría,
+    nombres, enums). Es el reemplazo de dos skills anteriores —<code>concuerda-docs-diagramas</code> y
+    <code>valida-diccionario-datos</code>— fusionadas en una sola con separación conceptual clara y sin duplicar
+    hallazgos. La prueba de que hace falta: hoy las migraciones crean un esquema RBAC que la documentación no
+    describe y usan un naming inglés contra la convención en español, y ningún control lo detecta antes de
+    implementar sobre una versión desmentida por otra.
+  </p>
+
+  <h2>§2 Objetivos</h2>
+  <ul>
+    <li><strong>O1.</strong> Existe <code>.opencode/skills/audita-modelo-datos/SKILL.md</code> con frontmatter <code>name: audita-modelo-datos</code> y <code>description</code> en una sola línea, sin placeholders ni TODO.</li>
+    <li><strong>O2.</strong> La skill lee y normaliza las fuentes: la documentación de datos (entidades, atributos, tipos, PK/FK, enums, relaciones), el diagrama ER (parseando el XML de las celdas sin abrir la herramienta) y las migraciones SQL (<code>CREATE TABLE</code>, columnas, <code>FOREIGN KEY</code>, enums).</li>
+    <li><strong>O3.</strong> La verificación de <strong>consistencia</strong> compara los tres pares de fuentes para cada elemento (entidad, atributo, tipo, relación, cardinalidad, enum) y emite una tabla de discrepancias sin duplicar hallazgos.</li>
+    <li><strong>O4.</strong> La verificación de <strong>conformidad</strong> contrasta cada fuente contra las convenciones del proyecto (PK uuid, auditoría, nombres de columnas, DANE, enums en español, naming canónico, completitud del diccionario) y emite filas de desviación por fuente.</li>
+    <li><strong>O5.</strong> Distingue <em>implementado</em> (existe en SQL), <em>documentado</em> (existe solo en la documentación), <em>pendiente</em> (futuro conocido) e <em>inconsistente</em> (las fuentes se contradicen); las entidades documentadas sin migración se reportan como "migración pendiente", no como error de la documentación.</li>
+    <li><strong>O6.</strong> En read-only no modifica ningún archivo: <code>git status</code> queda limpio y en particular el diagrama y las migraciones SQL sin cambios. En modo corrección solo edita la documentación del modelo, con confirmación por fila.</li>
+    <li><strong>O7.</strong> Queda instalada en <code>.opencode/skills/audita-modelo-datos/</code> (repo), <code>~/.opencode/skills/</code> y <code>~/.agents/skills/</code>.</li>
+  </ul>
+
+  <h2>§3 Fuera de alcance</h2>
+  <ul>
+    <li>No modifica el diagrama ER ni las migraciones SQL; no crea migraciones nuevas.</li>
+    <li>No valida el cumplimiento de requisitos del dominio (eso es <code>traza-requisitos</code>) ni la coherencia de la documentación de gobierno contra el árbol (eso es <code>audita-contexto</code>).</li>
+    <li>No se conecta a la base de datos: la auditoría trabaja sobre el texto versionado, sin ejecutar el SQL.</li>
+    <li>No inventa entidades ni enums ausentes; una entidad futura no tiene que existir en SQL de inmediato.</li>
+    <li>No se decide por el dueño sobre qué es desviación y qué es excepción intencional: se pregunta.</li>
+  </ul>
+
+  <h2>§4 Diseño</h2>
+  <p>
+    La skill ejecuta 5 pasos: confirmar modo (read-only o corrección), inventariar y leer las fuentes,
+    normalizar cada fuente a un modelo común (entidades, atributos, relaciones, enums), verificar consistencia
+    por pares, y verificar conformidad contra las convenciones; en modo corrección, editar la documentación con
+    confirmación por fila y re-auditar. Cada hallazgo se clasifica en una sola categoría: si es un desacuerdo
+    entre fuentes va a consistencia; si es un incumplimiento de una convención va a conformidad.
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="diagrama-titulo diagrama-desc">
+      <title id="diagrama-titulo">Flujo de auditoría del modelo de datos</title>
+      <desc id="diagrama-desc">Cinco pasos: confirmar modo, leer fuentes, normalizar, verificar consistencia por pares, verificar conformidad con convenciones, reportar y corregir con confirmación.</desc>
+      <defs>
+        <marker id="flecha" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 z" fill="#0b3d2e"/>
+        </marker>
+      </defs>
+      <rect x="10" y="80" width="130" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="75" y="108" text-anchor="middle" font-size="13" fill="#1f2933">1· Confirmar modo</text>
+      <text x="75" y="126" text-anchor="middle" font-size="11" fill="#52606d">read-only / corrección</text>
+
+      <rect x="160" y="80" width="130" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="225" y="108" text-anchor="middle" font-size="13" fill="#1f2933">2· Leer fuentes</text>
+      <text x="225" y="126" text-anchor="middle" font-size="11" fill="#52606d">doc · diagrama · SQL</text>
+
+      <rect x="310" y="80" width="130" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="375" y="108" text-anchor="middle" font-size="13" fill="#1f2933">3· Normalizar</text>
+      <text x="375" y="126" text-anchor="middle" font-size="11" fill="#52606d">modelo común</text>
+
+      <rect x="460" y="80" width="130" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="525" y="108" text-anchor="middle" font-size="13" fill="#1f2933">4· Consistencia</text>
+      <text x="525" y="126" text-anchor="middle" font-size="11" fill="#52606d">pares de fuentes</text>
+
+      <rect x="610" y="80" width="140" height="60" rx="8" fill="#eef3f0" stroke="#0b3d2e" stroke-width="2"/>
+      <text x="680" y="100" text-anchor="middle" font-size="13" fill="#1f2933">5· Conformidad</text>
+      <text x="680" y="118" text-anchor="middle" font-size="11" fill="#52606d">convenciones</text>
+      <text x="680" y="134" text-anchor="middle" font-size="11" fill="#52606d">+ reporte</text>
+
+      <line x1="140" y1="110" x2="153" y2="110" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flecha)"/>
+      <line x1="290" y1="110" x2="303" y2="110" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flecha)"/>
+      <line x1="440" y1="110" x2="453" y2="110" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flecha)"/>
+      <line x1="590" y1="110" x2="603" y2="110" stroke="#0b3d2e" stroke-width="2" marker-end="url(#flecha)"/>
+    </svg>
+    <figcaption>Figura 1 — Flujo de auditoría del modelo de datos</figcaption>
+  </figure>
+
+  <p><strong>Reglas que debe codificar la skill:</strong></p>
+  <ul>
+    <li><strong>Consistencia:</strong> comparar los tres pares de fuentes (documentación↔diagrama, documentación↔SQL, diagrama↔SQL) para entidades, atributos (nombre y tipo), PK/FK, relaciones y cardinalidades; los enums solo se comparan entre documentación y SQL.</li>
+    <li><strong>Conformidad:</strong> contrastar cada fuente contra las convenciones: PK uuid, auditoría en todas las entidades, nombres de columnas en el estilo documentado, DANE con tamaño, enums en español y con dominio definido, completitud del diccionario (toda entidad con tabla de atributos, cada atributo con tipo y requerido), naming canónico.</li>
+    <li><strong>Clasificación de estado:</strong> <em>implementado</em> (en SQL), <em>documentado</em> (solo en la documentación), <em>pendiente</em> (futuro conocido), <em>inconsistente</em> (las fuentes se contradicen).</li>
+    <li><strong>Un hallazgo, una categoría:</strong> un problema entre fuentes va a consistencia; un incumplimiento de convención va a conformidad; nunca a ambas.</li>
+    <li><strong>Verdad operativa = migraciones:</strong> ante conflicto documentación↔SQL, la corrección sugerida es documentar lo implementado, no forzar la documentación a copiar un error.</li>
+  </ul>
+
+  <h2>§5 Casos borde</h2>
+  <table>
+    <thead><tr><th>Caso</th><th>Comportamiento esperado</th></tr></thead>
+    <tbody>
+      <tr><td>Diagrama ausente o XML corrupto</td><td>Se reporta y se auditan los pares restantes (documentación↔SQL) sin abortar.</td></tr>
+      <tr><td>Migraciones crean entidades no documentadas</td><td>Inconsistencia documentación↔SQL; corrección: documentar lo implementado.</td></tr>
+      <tr><td>Entidades documentadas sin migración creada</td><td>"Migración pendiente"; no se corrige la documentación.</td></tr>
+      <tr><td>Misma entidad con tipo distinto según fuente</td><td>Inconsistencia de tipo; se resuelve documentando lo implementado.</td></tr>
+      <tr><td>Relación sin cardinalidad en el diagrama</td><td>Inconsistencia de cardinalidad.</td></tr>
+      <tr><td>Campo de estado/tipo sin dominio definido</td><td>Conformidad; corrección a la documentación.</td></tr>
+      <tr><td>SQL con snake_case en inglés contra convención</td><td>Conformidad en SQL; corrección "a migrar", sin editar la migración.</td></tr>
+      <tr><td>Reporte con muchas discrepancias</td><td>Resumen numérico por categoría al inicio; filas completas después; no se truncan.</td></tr>
+      <tr><td>Corrección confirmada que rompe otra sección</td><td>El re-audit lo detecta; los cambios se aplican fila por fila.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>§6 Criterios de aceptación</h2>
+  <table>
+    <thead><tr><th>#</th><th>Criterio (comprobación ejecutable)</th><th>Sí / No</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Existe <code>.opencode/skills/audita-modelo-datos/SKILL.md</code> con frontmatter <code>name: audita-modelo-datos</code> y <code>description</code> en una sola línea, sin TODO ni placeholders.</td><td class="si-no">☐</td></tr>
+      <tr><td>2</td><td>El reporte separa <em>inconsistencia</em> (pares de fuentes) de <em>conformidad</em> (convenciones), y ningún hallazgo aparece en ambas tablas.</td><td class="si-no">☐</td></tr>
+      <tr><td>3</td><td>Ejecutada en read-only sobre este repo, emite el resumen numérico por categoría y el detalle completo sin truncar filas.</td><td class="si-no">☐</td></tr>
+      <tr><td>4</td><td>Tras la auditoría read-only, <code>git status</code> queda limpio y el diagrama/SQL sin cambios.</td><td class="si-no">☐</td></tr>
+      <tr><td>5</td><td>En modo corrección, solo se edita la documentación del modelo, por fila confirmada; el re-audit reporta 0 drift en las filas corregidas.</td><td class="si-no">☐</td></tr>
+      <tr><td>6</td><td>Las entidades sin migración aparecen como "migración pendiente" y no como defecto de la documentación.</td><td class="si-no">☐</td></tr>
+      <tr><td>7</td><td>No se inventan entidades ni enums ausentes; cada duda se pregunta en vez de adivinar.</td><td class="si-no">☐</td></tr>
+      <tr><td>8</td><td>No hubo commits sobre <code>main</code> ni deploys dentro de este trabajo.</td><td class="si-no">☐</td></tr>
+    </tbody>
+  </table>
+
+  <h2>§7 Decisiones</h2>
+  <table>
+    <thead><tr><th>Duda que apareció</th><th>Se eligió</th><th>Se descartó</th><th>Por qué</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>¿Fusionar o mantener las dos skills de modelo de datos?</td>
+        <td>Una sola skill con dos planos (consistencia + conformidad)</td>
+        <td>Dos skills separadas (concuerda y valida)</td>
+        <td>Comparten fuentes, reglas de read-only y modo corrección; la separación conceptual interna evita duplicar hallazgos y reduce el mantenimiento del harness.</td>
+      </tr>
+      <tr>
+        <td>Categoría de cada hallazgo</td>
+        <td>Consistencia = desacuerdo entre fuentes; conformidad = incumplimiento de convención</td>
+        <td>Clasificar por fuente o por severidad</td>
+        <td>La frontera "mismo modelo vs reglas del proyecto" responde a preguntas distintas y evita que un problema aparezca dos veces.</td>
+      </tr>
+      <tr>
+        <td>Entidades documentadas sin migración</td>
+        <td>"Migración pendiente" (estado pendiente)</td>
+        <td>Defecto de documentación</td>
+        <td>Lo no escrito en SQL no es un error de la documentación; fuerzas a declararlo pendiente sin guardar una deuda falsa.</td>
+      </tr>
+      <tr>
+        <td>Correcciones</td>
+        <td>Solo la documentación, confirmada por fila</td>
+        <td>Editar diagrama o migraciones</td>
+        <td>El diagrama se mantiene a mano y el SQL tiene checksums de Flyway; la documentación es el único texto de fuente editable con retroalimentación.</td>
+      </tr>
+    </tbody>
+  </table>
+
+</body>
+</html>

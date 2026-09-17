@@ -1,0 +1,7 @@
+# Excepciones de la auditoría: un patrón por línea, rutas relativas a la raíz del repo.
+# Un path incluido aquí no genera drift, aunque rompa una convención o parezca faltante.
+# Comentar con '#' al inicio de la línea para desactivar una excepción.
+
+# Assets del portal docs/: se comparten en docs/assets/, fuera de las categorías de docs,
+# y su naming no está sujeto a la convención kebab-case de los documentos.
+docs/assets/*
