@@ -45,6 +45,7 @@ Portal de documentación técnica del proyecto. Organizada por categorías funci
 | [especificacion-traza-requisitos.html](07-work/especificacion-traza-requisitos.html) | Spec de la skill `traza-requisitos` | Harness (`.opencode/skills/`) |
 | [especificacion-audita-modelo-datos.html](07-work/especificacion-audita-modelo-datos.html) | Spec de la skill `audita-modelo-datos` | Harness (`.opencode/skills/`) |
 | [especificacion-audita-contexto.html](07-work/especificacion-audita-contexto.html) | Spec de la skill `audita-contexto` | Harness (`.opencode/skills/`) |
+| [especificacion-audita-pruebas.html](07-work/especificacion-audita-pruebas.html) | Spec de la skill pendiente `audita-pruebas` (no construida aún) | Harness (`.opencode/skills/`) |
 | [especificacion-alinear-modelo-datos.html](07-work/especificacion-alinear-modelo-datos.html) | Encargo pendiente: migración V3 para alinear modelo RBAC | Modelo de datos (02) |
 | [historico-especificacion-auditoria-vida-util.html](07-work/historico-especificacion-auditoria-vida-util.html) | Histórico: spec del orquestador `auditoria-vida-util` (retirado) | Harness (`.opencode/skills/`) |
 | [historico-especificacion-formatea-commits.html](07-work/historico-especificacion-formatea-commits.html) | Histórico: spec de la skill `formatea-commits` (retirada) | Harness (`.opencode/skills/`) |
