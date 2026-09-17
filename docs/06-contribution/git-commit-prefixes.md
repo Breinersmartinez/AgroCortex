@@ -20,7 +20,7 @@ Los prefijos semánticos ayudan a mantener un historial de cambios limpio, legib
 El formato estándar que debes seguir en la consola o en tu editor es:
 
 ```text
-<tipo>(ámbito opcional): <descripción breve en minúsculas y modo imperativo>
+<tipo>[ámbito opcional]: <descripción breve en minúsculas y modo imperativo>
 ```
 
 ### Ejemplos prácticos

@@ -29,6 +29,20 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint-workflows
     if: ${{ !failure() && !cancelled() }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: agrocortex
+          POSTGRES_USER: agrocortex
+          POSTGRES_PASSWORD: agrocortex
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agrocortex -d agrocortex"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: backend
@@ -45,6 +59,10 @@ jobs:
 
       - name: Compile and run tests
         run: mvn -B verify --no-transfer-progress
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/agrocortex
+          SPRING_DATASOURCE_USERNAME: agrocortex
+          SPRING_DATASOURCE_PASSWORD: agrocortex
 
       - name: Upload test reports
         if: ${{ !cancelled() }}
