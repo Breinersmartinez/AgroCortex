@@ -25,7 +25,7 @@
 ## Harness de skills
 - **Ubicación:** `.opencode/skills/` (versionada en git). OpenCode las reconoce por su ubicación estándar, sin configuración adicional. Los espejos instalados son `~/.opencode/skills/` y `~/.agents/skills/`.
 - **Regla de sync:** al cambiar una skill en `.opencode/skills/`, se replica esa carpeta (no la raíz global, nunca `--delete`) en los dos espejos y se verifica que `md5sum .opencode/skills/<skill>/SKILL.md` coincida con las dos copias. Sin sync, el entorno sigue cargando la versión vieja.
-- **Set canónico (4):** productividad `crear-especificacion`; auditoría `traza-requisitos`, `audita-modelo-datos`, `audita-contexto`.
+- **Set canónico (5):** productividad `crear-especificacion`; auditoría `traza-requisitos`, `audita-modelo-datos`, `audita-contexto`, `audita-pruebas`.
 - **Specs:** toda skill tiene su spec en `docs/07-work/especificacion-<skill>.html` (criterio de aceptación de la skill).
 - **Históricos:** las skills retiradas (`auditoria-vida-util`, `formatea-commits`, `concuerda-docs-diagramas`, `valida-diccionario-datos`) quedan documentadas como `historico-*` en `docs/07-work/`; `audita-agents-md` y `traza-requisitos-modelo` se renombraron a `audita-contexto` y `traza-requisitos` (sus specs son las actuales); las archivadas con anterioridad (`documenta-codigo`, `deploy-heroku-springboot`) viven solo en el historial de git.
 
