@@ -18,7 +18,7 @@ Portal de documentación técnica del proyecto. Organizada por categorías funci
 |---|---|---|
 | [data-model-mvp.md](02-data/data-model-mvp.md) | Modelo de entidades MVP: espina dorsal relacional **Agricultor → Sembradio → Cultivo → Consulta → Sesión → Mensaje** + diagnóstico/recomendación | Análisis agrícola (01) |
 | [data-model-er.drawio](02-data/data-model-er.drawio) | Diagrama entidad-relación del MVP (editar en draw.io) | Modelo de datos MVP (02) |
-| [possible-design-patterns.md](02-data/possible-design-patterns.md) | Patrones candidatos como evidencia de diseño por capability; insumo de `traza-requisitos` | Arquitectura (01) |
+| [possible-design-patterns.md](02-data/possible-design-patterns.md) | Borrador de patrones de diseño candidatos como evidencia por capability; insumo de `traza-requisitos` (documento vivo, no una decisión cerrada) | Arquitectura (01) |
 
 > El esquema operativo de la base de datos son las migraciones Flyway en `backend/src/main/resources/db/migration/`, no un diagrama ni un script suelto.
 
