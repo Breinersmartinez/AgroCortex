@@ -24,6 +24,3 @@ node_modules/
 
 # Documentación
 docs/
-k8s/
-monitoring/
-db/

@@ -3,7 +3,7 @@
 ## Que es esto
 - Diagnóstico agronómico conversacional para pequeños agricultores: foto + descripción libre → diagnóstico con nivel de confianza → validación humana (MVP documentado en `docs/02-data/data-model-mvp.md`).
 - Monorepo: `backend/` (Spring Boot 3.4, Java 17, Maven) + `frontend/` (Angular 19, Node 20) + CI/CD GitHub Actions (Heroku backend, Vercel frontend).
-- Estado: scaffold — backend sin controllers ni entidades (solo `AgroCortexApplication.java`), frontend sin rutas ni servicios, `db/agroCortex.sql` vacío, `k8s/` y `monitoring/` con configs vacías.
+- Estado: scaffold — backend con `AgroCortexApplication.java`, dependencias de Spring Security/Flyway/JWT en `pom.xml` y migraciones RBAC `V1`/`V2` en `backend/src/main/resources/db/migration/`, pero sin controllers ni entidades de dominio; frontend sin rutas ni servicios.
 
 ## Como se corre
 - Backend (dev): PostgreSQL ya corriendo en `localhost:5432` con DB/user/pass `agrocortex`; `cd backend && mvn spring-boot:run`. Perfil `dev` por defecto; Swagger en `/swagger-ui.html`.
@@ -16,11 +16,19 @@
 ## Convenciones
 - Backend: paquete raíz `com.agrocortex`; perfil `dev` = postgres local + `ddl-auto: update`; perfil `prod` = vars `PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD` + `ddl-auto: validate`.
 - Frontend: componentes standalone con su propio CSS (`app.component.ts/html/css`), `appConfig` en `app.config.ts`, rutas en `app.routes.ts`.
-- Modelo de datos: fuente única `docs/02-data/data-model-mvp.md` (tablas); diagrama visual `docs/02-data/data-model-er.drawio` se edita a mano en draw.io.
+- Modelo de datos: fuente única `docs/02-data/data-model-mvp.md` (tablas); diagrama visual `docs/02-data/data-model-er.drawio` se edita a mano en draw.io. El esquema operativo son las migraciones Flyway.
+- Arquitectura: fuente única `docs/01-architecture/clean-architecture.md` (regla de dependencias, capabilities de negocio, RBAC/JWT/IA como puertos y adaptadores); diagrama en `docs/01-architecture/architecture-flow.drawio`.
 - Datos (de `data-model-mvp.md`): `id` uuid PK, auditoría `creadoEn`/`actualizadoEn` en todas las tablas, DANE `departamentoDane` text(2)/`municipioDane` text(5), enums en español.
 - Nombre canónico de la entidad terreno: **Sembradio**/`sembradioId`.
 - Docs: filenames en inglés kebab-case, prefijo numérico por categoría (`docs/0X-*`), cada doc referencia a sus dependientes, assets en `docs/assets/`.
 - Workflows: acciones ancladas a commit SHA, con `[sha] # vX` de referencia. Despliegue: merge a `main` → `Deploy` (Heroku + Vercel), ambiente único; `main` protegida (PR + checks `CI`/`Security`/`Qodana`).
+
+## Harness de skills
+- **Ubicación:** `.opencode/skills/` (versionada en git). OpenCode las reconoce por su ubicación estándar, sin configuración adicional. Los espejos instalados son `~/.opencode/skills/` y `~/.agents/skills/`.
+- **Regla de sync:** al cambiar una skill en `.opencode/skills/`, se replica esa carpeta (no la raíz global, nunca `--delete`) en los dos espejos y se verifica que `md5sum .opencode/skills/<skill>/SKILL.md` coincida con las dos copias. Sin sync, el entorno sigue cargando la versión vieja.
+- **Set canónico (5):** productividad `crear-especificacion`; auditoría `traza-requisitos`, `audita-modelo-datos`, `audita-contexto`, `audita-pruebas`.
+- **Specs:** toda skill tiene su spec en `docs/07-work/especificacion-<skill>.html` (criterio de aceptación de la skill).
+- **Históricos:** las skills retiradas (`auditoria-vida-util`, `formatea-commits`, `concuerda-docs-diagramas`, `valida-diccionario-datos`) y las archivadas con anterioridad (`documenta-codigo`, `deploy-heroku-springboot`) viven solo en el historial de Git; `audita-agents-md` y `traza-requisitos-modelo` se renombraron a `audita-contexto` y `traza-requisitos`.
 
 ## Que NO hacer
 - No hardcodear credenciales ni URLs de despliegue; `.env` y `*.env` están gitignored (solo `!*.env.example`).
