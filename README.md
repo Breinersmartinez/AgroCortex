@@ -27,7 +27,6 @@ Scaffold: el repositorio tiene los cimientos, no la funcionalidad del MVP.
 backend/     API Spring Boot (Maven)
 frontend/    SPA Angular
 docs/        Portal de documentación (ver docs/README.md)
-.opencode/   Skills de OpenCode (harness de agentes)
 .github/     Workflows de GitHub Actions
 ```
 
@@ -41,7 +40,6 @@ docs/        Portal de documentación (ver docs/README.md)
 | Esquema de la base de datos | migraciones Flyway en `backend/src/main/resources/db/migration/` |
 | CI/CD y despliegue | `docs/04-operations/` |
 | Seguridad | `docs/05-security/README.md` |
-| Trabajo y specs | `docs/07-work/` |
 | Reglas para agentes | `AGENTS.md` |
 
 ## Cómo correr
