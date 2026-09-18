@@ -23,6 +23,13 @@
 - Docs: filenames en inglés kebab-case, prefijo numérico por categoría (`docs/0X-*`), cada doc referencia a sus dependientes, assets en `docs/assets/`.
 - Workflows: acciones ancladas a commit SHA, con `[sha] # vX` de referencia. Despliegue: merge a `main` → `Deploy` (Heroku + Vercel), ambiente único; `main` protegida (PR + checks `CI`/`Security`/`Qodana`).
 
+## Harness de skills
+- **Ubicación:** `.opencode/skills/` (versionada en git). OpenCode las reconoce por su ubicación estándar, sin configuración adicional. Los espejos instalados son `~/.opencode/skills/` y `~/.agents/skills/`.
+- **Regla de sync:** al cambiar una skill en `.opencode/skills/`, se replica esa carpeta (no la raíz global, nunca `--delete`) en los dos espejos y se verifica que `md5sum .opencode/skills/<skill>/SKILL.md` coincida con las dos copias. Sin sync, el entorno sigue cargando la versión vieja.
+- **Set canónico (5):** productividad `crear-especificacion`; auditoría `traza-requisitos`, `audita-modelo-datos`, `audita-contexto`, `audita-pruebas`.
+- **Specs:** toda skill tiene su spec en `docs/07-work/especificacion-<skill>.html` (criterio de aceptación de la skill).
+- **Históricos:** las skills retiradas (`auditoria-vida-util`, `formatea-commits`, `concuerda-docs-diagramas`, `valida-diccionario-datos`) y las archivadas con anterioridad (`documenta-codigo`, `deploy-heroku-springboot`) viven solo en el historial de Git; `audita-agents-md` y `traza-requisitos-modelo` se renombraron a `audita-contexto` y `traza-requisitos`.
+
 ## Que NO hacer
 - No hardcodear credenciales ni URLs de despliegue; `.env` y `*.env` están gitignored (solo `!*.env.example`).
 - No correr con perfil `prod` fuera de Heroku: sin las vars `PG*` la app muere (H10).
