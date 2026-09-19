@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Especificación: reserva de puestos del laboratorio</title>
+  <style>
+    body { font: 16px/1.55 system-ui, sans-serif; color: #1c2820; max-width: 920px; margin: auto; padding: 2rem 1rem 4rem; }
+    h1 { border-bottom: 3px solid #28613b; padding-bottom: .5rem; } h2 { margin-top: 2.5rem; color: #174326; }
+    table { border-collapse: collapse; width: 100%; } th,td { text-align:left; vertical-align:top; padding:.55rem; border:1px solid #c8d4cb; } th { background:#e8f0e9; }
+    .nota { background:#f0f5f0; border-left:4px solid #28613b; padding:.8rem 1rem; } code { background:#edf1ed; padding:.1rem .25rem; }
+  </style>
+</head>
+<body>
+  <h1>Especificación: reserva de puestos del laboratorio</h1>
+  <p class="nota"><strong>Estado:</strong> decisiones cerradas para el Caso A del reto de semana 4. El producto será un HTML que abre sin instalación, servidor ni dependencias.</p>
+
+  <h2>§1 Resumen</h2>
+  <p>Construir una página local para que un estudiante vea los veinte puestos del laboratorio por franjas de dos horas, identifique los libres y reserve uno con su nombre; así puede escoger un puesto sin depender de una lista manual.</p>
+
+  <h2>§2 Objetivos</h2>
+  <ul>
+    <li>Al abrir <code>producto/reservas-laboratorio.html</code> con doble clic, se muestran exactamente 20 puestos y 7 franjas: 06–08, 08–10, 10–12, 12–14, 14–16, 16–18 y 18–20.</li>
+    <li>Un usuario con nombre puede reservar una celda libre mediante un clic; el cambio se refleja en la misma vista.</li>
+    <li>Una reserva permanece visible después de recargar el navegador en el mismo equipo.</li>
+    <li>Una celda ya reservada no acepta una segunda reserva.</li>
+  </ul>
+
+  <h2>§3 Fuera de alcance</h2>
+  <ul>
+    <li><strong>Cancelación:</strong> se difiere para concentrar el ciclo en reservar y verificar el mínimo funcional.</li>
+    <li><strong>Inicio de sesión y roles:</strong> no se implementan porque el reto no permite servidor ni base de datos.</li>
+    <li><strong>Sincronización entre equipos:</strong> no se implementa; <code>localStorage</code> solo conserva datos en un navegador.</li>
+    <li><strong>Sanciones por inasistencia:</strong> no se implementan porque requieren una política institucional que el requisito no entrega.</li>
+    <li><strong>Puestos con equipamiento especial:</strong> se tratan como equivalentes en este ciclo porque no se definieron categorías.</li>
+  </ul>
+
+  <h2>§4 Diseño</h2>
+  <p>La interfaz tiene un campo de nombre y una tabla. Cada cruce puesto–franja es una celda disponible o reservada. Al reservar, la aplicación valida el nombre, guarda el dato localmente y vuelve a dibujar la tabla.</p>
+  <svg viewBox="0 0 800 180" role="img" aria-labelledby="titulo-flujo descripcion-flujo" xmlns="http://www.w3.org/2000/svg">
+    <title id="titulo-flujo">Flujo de una reserva</title><desc id="descripcion-flujo">El estudiante escribe su nombre, elige una celda libre, la aplicación valida, guarda localmente y actualiza la tabla.</desc>
+    <defs><marker id="f" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8z" fill="#28613b"/></marker></defs>
+    <g fill="#e8f0e9" stroke="#28613b" stroke-width="2"><rect x="10" y="55" width="130" height="60" rx="8"/><rect x="170" y="55" width="130" height="60" rx="8"/><rect x="330" y="55" width="130" height="60" rx="8"/><rect x="490" y="55" width="130" height="60" rx="8"/><rect x="650" y="55" width="130" height="60" rx="8"/></g>
+    <g stroke="#28613b" stroke-width="2" marker-end="url(#f)"><path d="M140 85h25"/><path d="M300 85h25"/><path d="M460 85h25"/><path d="M620 85h25"/></g>
+    <g text-anchor="middle" font-family="system-ui" font-size="14" fill="#1c2820"><text x="75" y="80">Escribe</text><text x="75" y="99">nombre</text><text x="235" y="80">Elige celda</text><text x="235" y="99">libre</text><text x="395" y="80">Valida</text><text x="395" y="99">nombre</text><text x="555" y="80">Guarda</text><text x="555" y="99">localmente</text><text x="715" y="80">Actualiza</text><text x="715" y="99">tabla</text></g>
+  </svg>
+
+  <h2>§5 Casos borde</h2>
+  <table><thead><tr><th>Situación</th><th>Comportamiento esperado</th></tr></thead><tbody>
+    <tr><td>El nombre está vacío.</td><td>No se reserva la celda, se muestra un aviso y el foco vuelve al campo de nombre.</td></tr>
+    <tr><td>La celda ya está reservada.</td><td>Se muestra como reservada, queda deshabilitada y no admite un clic adicional.</td></tr>
+    <tr><td>El almacenamiento local contiene datos inválidos.</td><td>La tabla se muestra sin reservas y explica que los datos guardados no eran válidos.</td></tr>
+    <tr><td>El navegador no conserva la reserva en otro equipo.</td><td>La aplicación no promete sincronización; la reserva solo existe en el navegador que la creó.</td></tr>
+  </tbody></table>
+
+  <h2>§6 Criterios de aceptación</h2>
+  <table><thead><tr><th>Criterio</th><th>Cómo verificar</th><th>Sí/No</th></tr></thead><tbody>
+    <tr><td>El archivo abre sin instalar dependencias.</td><td>Abrirlo con doble clic en un navegador moderno.</td><td>☐ Sí ☐ No</td></tr>
+    <tr><td>Hay 20 filas de puestos y 7 franjas de dos horas entre 06:00 y 20:00.</td><td>Contar los encabezados y las filas de la tabla.</td><td>☐ Sí ☐ No</td></tr>
+    <tr><td>Un nombre y un clic sobre una celda libre generan una reserva visible.</td><td>Escribir “Ana”, pulsar una celda libre y leer el estado.</td><td>☐ Sí ☐ No</td></tr>
+    <tr><td>Sin nombre no se crea una reserva.</td><td>Vaciar el campo, pulsar una celda libre y comprobar el aviso.</td><td>☐ Sí ☐ No</td></tr>
+    <tr><td>Una reserva sobrevive a recargar la página.</td><td>Reservar, recargar y revisar la misma celda.</td><td>☐ Sí ☐ No</td></tr>
+  </tbody></table>
+
+  <h2>§7 Decisiones</h2>
+  <table><thead><tr><th>Duda</th><th>Elección</th><th>Descartado</th><th>Por qué</th></tr></thead><tbody>
+    <tr><td>¿Cómo identificar al estudiante?</td><td>Nombre escrito, máximo 40 caracteres.</td><td>Login institucional.</td><td>El archivo debe funcionar localmente y no hay servicio de autenticación.</td></tr>
+    <tr><td>¿Qué franjas existen?</td><td>Siete franjas fijas de 2 horas.</td><td>Horarios configurables.</td><td>El enunciado fija 06:00–20:00 y el reto busca un mínimo pequeño.</td></tr>
+    <tr><td>¿Cuántas reservas permite un estudiante?</td><td>Una por nombre y franja en esta vista.</td><td>Límites diarios o sanciones.</td><td>Esas políticas no están dadas y no deben inventarse.</td></tr>
+    <tr><td>¿Dónde persiste?</td><td><code>localStorage</code> del navegador.</td><td>Base de datos o sincronización.</td><td>La restricción prohíbe servidor y dependencias.</td></tr>
+    <tr><td>¿Se puede cancelar?</td><td>No en este ciclo.</td><td>Implementarla sin verificar reserva primero.</td><td>Se prioriza cumplir y probar el mínimo funcional.</td></tr>
+  </tbody></table>
+</body>
+</html>

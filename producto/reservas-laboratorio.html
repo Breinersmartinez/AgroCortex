@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reserva de puestos · Laboratorio</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #17231c; background: #f5f7f3; }
+    body { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+    h1 { margin-bottom: .25rem; } .ayuda { color: #526057; }
+    .formulario { display: flex; gap: .75rem; align-items: end; margin: 1.5rem 0; flex-wrap: wrap; }
+    label { display: grid; gap: .35rem; font-weight: 650; } input { padding: .65rem; min-width: 240px; border: 1px solid #8da193; border-radius: .4rem; }
+    #aviso { min-height: 1.5rem; font-weight: 600; color: #8a2d21; } .tabla { overflow-x: auto; background: white; border-radius: .6rem; box-shadow: 0 1px 5px #17231c20; }
+    table { border-collapse: collapse; width: 100%; min-width: 780px; } th, td { border: 1px solid #d7dfd8; padding: .5rem; text-align: center; } th { background: #e7f0e7; }
+    .puesto { text-align: left; font-weight: 700; white-space: nowrap; } button { width: 100%; min-height: 3.3rem; border: 0; border-radius: .35rem; background: #e0efe3; color: #153a23; cursor: pointer; font-weight: 650; }
+    button:hover { background: #c5e0ca; } button:focus-visible, input:focus-visible { outline: 3px solid #e5a627; outline-offset: 2px; }
+    button.reservado { background: #9a3f34; color: white; cursor: not-allowed; } footer { margin-top: 1rem; color: #526057; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Reserva de puestos del laboratorio</h1>
+    <p class="ayuda">Elige una franja libre. Las reservas se guardan únicamente en este navegador.</p>
+    <div class="formulario">
+      <label for="nombre">Tu nombre <input id="nombre" autocomplete="name" maxlength="40" placeholder="Ej.: Ana Gómez"></label>
+    </div>
+    <p id="aviso" role="status" aria-live="polite"></p>
+    <div class="tabla"><table><thead><tr><th scope="col">Puesto</th></tr></thead><tbody id="puestos"></tbody></table></div>
+    <footer>20 puestos · franjas de dos horas · 06:00 a 20:00</footer>
+  </main>
+  <script>
+    const franjas = ['06–08', '08–10', '10–12', '12–14', '14–16', '16–18', '18–20'];
+    const clave = 'agrocortex-reservas-laboratorio-v1';
+    const aviso = document.querySelector('#aviso');
+    let reservas = cargar();
+    function cargar() {
+      try { const valor = JSON.parse(localStorage.getItem(clave) || '{}'); return valor && typeof valor === 'object' ? valor : {}; }
+      catch (_) { aviso.textContent = 'Las reservas guardadas no eran válidas; se inició una vista vacía.'; return {}; }
+    }
+    function guardar() { localStorage.setItem(clave, JSON.stringify(reservas)); }
+    function pintar() {
+      const encabezado = document.querySelector('thead tr');
+      encabezado.replaceChildren(Object.assign(document.createElement('th'), { scope: 'col', textContent: 'Puesto' }));
+      franjas.forEach(franja => encabezado.append(Object.assign(document.createElement('th'), { scope: 'col', textContent: franja })));
+      const cuerpo = document.querySelector('#puestos'); cuerpo.replaceChildren();
+      for (let puesto = 1; puesto <= 20; puesto++) {
+        const fila = document.createElement('tr'); fila.append(Object.assign(document.createElement('th'), { scope: 'row', className: 'puesto', textContent: `Puesto ${puesto}` }));
+        franjas.forEach(franja => {
+          const id = `${puesto}-${franja}`; const boton = document.createElement('button'); const reserva = reservas[id];
+          boton.textContent = reserva ? `Reservado: ${reserva}` : 'Disponible';
+          boton.className = reserva ? 'reservado' : ''; boton.disabled = Boolean(reserva);
+          boton.setAttribute('aria-label', `Puesto ${puesto}, ${franja}: ${boton.textContent}`);
+          boton.addEventListener('click', () => reservar(id, puesto, franja)); const celda = document.createElement('td'); celda.append(boton); fila.append(celda);
+        }); cuerpo.append(fila);
+      }
+    }
+    function reservar(id, puesto, franja) {
+      const nombre = document.querySelector('#nombre').value.trim();
+      if (!nombre) { aviso.textContent = 'Escribe tu nombre antes de reservar.'; document.querySelector('#nombre').focus(); return; }
+      reservas[id] = nombre; guardar(); aviso.textContent = `Reservaste el puesto ${puesto}, franja ${franja}.`; pintar();
+    }
+    pintar();
+  </script>
+</body>
+</html>

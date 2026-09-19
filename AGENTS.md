@@ -24,9 +24,9 @@
 - Workflows: acciones ancladas a commit SHA, con `[sha] # vX` de referencia. Despliegue: merge a `main` → `Deploy` (Heroku + Vercel), ambiente único; `main` protegida (PR + checks `CI`/`Security`/`Qodana`).
 
 ## Harness de skills
-- **Ubicación:** `.opencode/skills/` (versionada en git). OpenCode las reconoce por su ubicación estándar, sin configuración adicional. Los espejos instalados son `~/.opencode/skills/` y `~/.agents/skills/`.
+- **Ubicación:** `.opencode/skills/` (versionada en git). OpenCode las reconoce por su ubicación estándar, sin configuración adicional. Los espejos instalados son `~/.config/opencode/skills/` y `~/.agents/skills/`.
 - **Regla de sync:** al cambiar una skill en `.opencode/skills/`, se replica esa carpeta (no la raíz global, nunca `--delete`) en los dos espejos y se verifica que `md5sum .opencode/skills/<skill>/SKILL.md` coincida con las dos copias. Sin sync, el entorno sigue cargando la versión vieja.
-- **Set canónico (5):** productividad `crear-especificacion`; auditoría `traza-requisitos`, `audita-modelo-datos`, `audita-contexto`, `audita-pruebas`.
+- **Set canónico (3):** cadena de trabajo `crear-especificacion`, `escribir-plan`, `ejecutar-plan`.
 - **Specs:** toda skill tiene su spec en `docs/07-work/especificacion-<skill>.html` (criterio de aceptación de la skill).
 - **Históricos:** las skills retiradas (`auditoria-vida-util`, `formatea-commits`, `concuerda-docs-diagramas`, `valida-diccionario-datos`) y las archivadas con anterioridad (`documenta-codigo`, `deploy-heroku-springboot`) viven solo en el historial de Git; `audita-agents-md` y `traza-requisitos-modelo` se renombraron a `audita-contexto` y `traza-requisitos`.
 
