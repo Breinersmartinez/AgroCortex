@@ -39,7 +39,7 @@ Sirve / Sirve con reservas / No sirve / No se puede emitir — razón en una fra
 - Un `Sí` sin evidencia está prohibido. `No verificable` es válido y nunca se reemplaza por un `Sí` prudente.
 - No modifica artefactos, no marca tareas como completadas y no crea criterios adicionales.
 - Si un criterio falla, no propone un arreglo silencioso: identifica el tramo y el cambio que debe revisarse.
-- Para la reserva de puestos, valida los cinco criterios de §6: apertura local, 20 puestos y 7 franjas, reserva con nombre, rechazo sin nombre y persistencia tras recargar.
+- El detalle de un caso concreto vive en su spec, no en el skill: un ejemplo solo ilustra la activación, nunca se vuelve regla.
 
 ## Ejemplo de activación
 
