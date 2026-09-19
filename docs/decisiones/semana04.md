@@ -33,12 +33,18 @@ Las skills auxiliares `validar-resultado` y `auditar-contexto` complementan el h
 
 ## Guion de demo
 
-1. **Producto funcionando — 2 min:** abrir `producto/reservas-laboratorio.html`, reservar y recargar.
-2. **Decisiones — 1 min:** identificación, límite de reservas y cancelación diferida.
-3. **Cadena de skills — 2 min:** mostrar las tres descripciones, reglas duras y archivos resultantes.
-4. **Control de calidad — 1 min:** mostrar la prueba del criterio no verificable y explicar la corrección si aparece un fallo.
+**Modalidad:** individual · 6 minutos · mostrar artefactos y evidencias guardadas, sin generar nada en vivo.
 
-**Plan B:** abrir el archivo local en un segundo navegador y mostrar una captura de la evidencia de verificación si la sesión de OpenCode falla.
+| Tiempo | Qué se muestra | Qué se dice |
+|---:|---|---|
+| 0:00–0:15 | Producto abierto | Proceso: convierto un requisito ambiguo en algo verificable; el resultado es esto. |
+| 0:15–1:15 | Spec §7 | Dos decisiones difíciles: identificación (nombre propio, se descartó login) y límite de reservas (una por nombre y franja, se descartaron sanciones). |
+| 1:15–2:30 | Demo del producto | Reservar “Ana”, celda bloqueada, recarga con persistencia. Mínimo: 20 puestos, 7 franjas, sin backend. |
+| 2:30–4:30 | Skills + spec + plan + evidencia | Cadena de tres skills, una regla dura por skill, spec con 7 secciones y fuera de alcance ≥4, `PLAN.md` con primera tarea y dependencias. Prueba del criterio no verificable con su resultado real; si falló, la corrección aplicada. |
+| 4:30–5:30 | Plan o producto | Decisión defendida: cancelación fuera del ciclo; tres tareas verificadas valen más que ocho con palomita. |
+| 5:30–6:00 | `validar-resultado` | Dos revisiones de solo lectura (`validar-resultado`, `auditar-contexto`) refuerzan la cadena; evidencia versionada en el repo. |
+
+**Plan B:** si OpenCode falla, mostrar los `SKILL.md` versionados, la spec, el plan y la evidencia guardada sin intentar repararlo. Si el navegador falla, abrir `reservas-laboratorio.html` en un segundo navegador o mostrar la captura de la prueba. Un video o captura sirve de respaldo, no sustituye la demostración si el archivo puede abrirse localmente.
 
 ## Lo que no se alcanzó a hacer
 
