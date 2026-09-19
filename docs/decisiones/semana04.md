@@ -13,6 +13,8 @@
 
 Las fuentes canónicas viven en `.opencode/skills/`. Las tres fueron exportadas sin cambios a `skills/` para la revisión del reto y sincronizadas con `~/.config/opencode/skills/` y `~/.agents/skills/`.
 
+Las skills auxiliares `validar-resultado` y `auditar-contexto` complementan el harness, pero no sustituyen la cadena de tres eslabones exigida para el reto.
+
 ## Reglas duras agregadas
 
 - `crear-especificacion` no avanza si hay decisiones de producto relevantes sin respuesta.

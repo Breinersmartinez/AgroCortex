@@ -57,6 +57,8 @@ Portal de documentación técnica del proyecto. Organizada por categorías funci
 | [especificacion-crear-especificacion.html](07-work/especificacion-crear-especificacion.html) | Contrato de la skill que produce specs verificables | `.opencode/skills/crear-especificacion/` |
 | [especificacion-escribir-plan.html](07-work/especificacion-escribir-plan.html) | Contrato de la skill que deriva planes | `.opencode/skills/escribir-plan/` |
 | [especificacion-ejecutar-plan.html](07-work/especificacion-ejecutar-plan.html) | Contrato de la skill que ejecuta una tarea con evidencia | `.opencode/skills/ejecutar-plan/` |
+| [especificacion-validar-resultado.html](07-work/especificacion-validar-resultado.html) | Contrato de la skill que valida un producto contra su spec | `.opencode/skills/validar-resultado/` |
+| [especificacion-auditar-contexto.html](07-work/especificacion-auditar-contexto.html) | Contrato de la skill que comprueba coherencia del contexto del repo | `.opencode/skills/auditar-contexto/` |
 
 ## Convenciones del portal
 
