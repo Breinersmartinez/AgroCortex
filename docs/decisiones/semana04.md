@@ -37,12 +37,12 @@ Las skills auxiliares `validar-resultado` y `auditar-contexto` complementan el h
 
 | Tiempo | Qué se muestra | Qué se dice |
 |---:|---|---|
-| 0:00–0:15 | Producto abierto | Proceso: convierto un requisito ambiguo en algo verificable; el resultado es esto. |
+| 0:00–0:15 | Producto abierto | Proceso: la IA no pasa directo del requerimiento al código; pasa por especificación, plan, ejecución y validación. El resultado es esto. |
 | 0:15–1:15 | Spec §7 | Dos decisiones difíciles: identificación (nombre propio, se descartó login) y límite de reservas (una por nombre y franja, se descartaron sanciones). |
 | 1:15–2:30 | Demo del producto | Reservar “Ana”, celda bloqueada, recarga con persistencia. Mínimo: 20 puestos, 7 franjas, sin backend. |
 | 2:30–4:30 | Skills + spec + plan + evidencia | Cadena de tres skills, una regla dura por skill, spec con 7 secciones y fuera de alcance ≥4, `PLAN.md` con primera tarea y dependencias. Prueba del criterio no verificable con su resultado real; si falló, la corrección aplicada. |
 | 4:30–5:30 | Plan o producto | Decisión defendida: cancelación fuera del ciclo; tres tareas verificadas valen más que ocho con palomita. |
-| 5:30–6:00 | `validar-resultado` | Dos revisiones de solo lectura (`validar-resultado`, `auditar-contexto`) refuerzan la cadena; evidencia versionada en el repo. |
+| 5:30–6:00 | `validar-resultado` | Separa definir de comprobar: el resultado se contrasta contra los criterios de la spec, no contra lo que la IA creía. Dos revisiones de solo lectura (`validar-resultado`, `auditar-contexto`) refuerzan la cadena; evidencia versionada en el repo. |
 
 **Plan B:** si OpenCode falla, mostrar los `SKILL.md` versionados, la spec, el plan y la evidencia guardada sin intentar repararlo. Si el navegador falla, abrir `reservas-laboratorio.html` en un segundo navegador o mostrar la captura de la prueba. Un video o captura sirve de respaldo, no sustituye la demostración si el archivo puede abrirse localmente.
 
