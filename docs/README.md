@@ -49,16 +49,7 @@ Portal de documentación técnica del proyecto. Organizada por categorías funci
 
 ### 07 — Work
 
-| Documento | Qué es | Relacionado con |
-|---|---|---|
-| [SPEC.md](SPEC.md) | Punto de entrada a la especificación HTML del reto de semana 4 | Plan (07) · Producto de reservas |
-| [PLAN.md](PLAN.md) | Plan derivado de la especificación del reto | Skills de OpenCode · Producto de reservas |
-| [decisiones/semana04.md](decisiones/semana04.md) | Evidencia de decisiones, pruebas y guion de la demostración | Spec (07) · Plan (07) |
-| [especificacion-crear-especificacion.html](07-work/especificacion-crear-especificacion.html) | Contrato de la skill que produce specs verificables | `.opencode/skills/crear-especificacion/` |
-| [especificacion-escribir-plan.html](07-work/especificacion-escribir-plan.html) | Contrato de la skill que deriva planes | `.opencode/skills/escribir-plan/` |
-| [especificacion-ejecutar-plan.html](07-work/especificacion-ejecutar-plan.html) | Contrato de la skill que ejecuta una tarea con evidencia | `.opencode/skills/ejecutar-plan/` |
-| [especificacion-validar-resultado.html](07-work/especificacion-validar-resultado.html) | Contrato de la skill que valida un producto contra su spec | `.opencode/skills/validar-resultado/` |
-| [especificacion-auditar-contexto.html](07-work/especificacion-auditar-contexto.html) | Contrato de la skill que comprueba coherencia del contexto del repo | `.opencode/skills/auditar-contexto/` |
+> El reto de reserva de puestos y las specs de las skills viven en el repo `~/Development/IdeaProjects/presentacion-harness` (`docs/07-work/`), dedicado al harness y su presentación.
 
 ## Convenciones del portal
 

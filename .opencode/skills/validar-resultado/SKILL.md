@@ -43,4 +43,4 @@ Sirve / Sirve con reservas / No sirve / No se puede emitir — razón en una fra
 
 ## Ejemplo de activación
 
-"Valida `producto/reservas-laboratorio.html` contra `docs/especificacion-reserva-puestos-laboratorio.html`" activa esta skill.
+"Valida `producto/reservas-laboratorio.html` del repo presentacion-harness contra su spec" activa esta skill. La habilidad no depende del caso: valida cualquier artefacto contra los criterios de una spec cerrada.
