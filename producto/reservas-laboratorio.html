@@ -31,13 +31,32 @@
   <script>
     const franjas = ['06–08', '08–10', '10–12', '12–14', '14–16', '16–18', '18–20'];
     const clave = 'agrocortex-reservas-laboratorio-v1';
+    const maxPuesto = 20;
+    const maxNombre = 40;
     const aviso = document.querySelector('#aviso');
     let reservas = cargar();
-    function cargar() {
-      try { const valor = JSON.parse(localStorage.getItem(clave) || '{}'); return valor && typeof valor === 'object' ? valor : {}; }
-      catch (_) { aviso.textContent = 'Las reservas guardadas no eran válidas; se inició una vista vacía.'; return {}; }
+    function estructuraValida(valor) {
+      if (!valor || typeof valor !== 'object' || Array.isArray(valor)) return false;
+      return Object.entries(valor).every(([id, nombre]) => {
+        const [puesto, franja] = id.split('-');
+        const n = Number(puesto);
+        return Number.isInteger(n) && n >= 1 && n <= maxPuesto && franjas.includes(franja) && typeof nombre === 'string' && nombre.trim().length > 0 && nombre.length <= maxNombre;
+      });
     }
-    function guardar() { localStorage.setItem(clave, JSON.stringify(reservas)); }
+    function avisoInvalido() { aviso.textContent = 'Las reservas guardadas no eran válidas; se inició una vista vacía.'; }
+    function cargar() {
+      try {
+        const crudo = localStorage.getItem(clave);
+        if (!crudo) return {};
+        const valor = JSON.parse(crudo);
+        if (estructuraValida(valor)) return valor;
+        avisoInvalido(); return {};
+      } catch (_) { avisoInvalido(); return {}; }
+    }
+    function guardar() {
+      try { localStorage.setItem(clave, JSON.stringify(reservas)); return true; }
+      catch (_) { aviso.textContent = 'No se pudo guardar la reserva en este navegador.'; return false; }
+    }
     function pintar() {
       const encabezado = document.querySelector('thead tr');
       encabezado.replaceChildren(Object.assign(document.createElement('th'), { scope: 'col', textContent: 'Puesto' }));
@@ -57,7 +76,7 @@
     function reservar(id, puesto, franja) {
       const nombre = document.querySelector('#nombre').value.trim();
       if (!nombre) { aviso.textContent = 'Escribe tu nombre antes de reservar.'; document.querySelector('#nombre').focus(); return; }
-      reservas[id] = nombre; guardar(); aviso.textContent = `Reservaste el puesto ${puesto}, franja ${franja}.`; pintar();
+      reservas[id] = nombre; if (guardar()) aviso.textContent = `Reservaste el puesto ${puesto}, franja ${franja}.`; pintar();
     }
     pintar();
   </script>
