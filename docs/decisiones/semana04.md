@@ -25,11 +25,12 @@ Las skills auxiliares `validar-resultado` y `auditar-contexto` complementan el h
 
 | Skill | Prueba | Resultado | Ajuste o evidencia |
 |---|---|---|---|
-| Instalación | Ejecutar `opencode debug skill`. | Pasó. | OpenCode reconoció las tres skills desde `.opencode/skills/`. |
-| Renderizado mínimo | Abrir el producto con Chrome headless y contar los puestos dibujados. | Pasó. | El DOM generado contiene 20 puestos. |
-| crear-especificacion | Pedir una spec sin nombrar la skill. | Pendiente de ejecutar en OpenCode. | Debe activarse cuando no existe spec cerrada. |
-| escribir-plan | Pedir un plan a partir de la spec sin nombrar la skill. | Pendiente de ejecutar en OpenCode. | Debe activar solo con una spec completa. |
-| ejecutar-plan | Reemplazar temporalmente un criterio por uno no verificable. | Pendiente de ejecutar en OpenCode. | Debe informar que no puede verificar, no declarar éxito. |
+| Instalación | Ejecutar `opencode debug skill`. | Pasó. | OpenCode reconoció las cinco skills canónicas desde los espejos sincronizados. |
+| Renderizado mínimo | Abrir el producto con Chrome headless y contar los puestos dibujados. | Pasó. | El DOM generado contiene 20 filas, 7 franjas y 140 celdas. |
+| crear-especificacion | Pedir una spec sin nombrar la skill. | Pasó. | Con "registrar un sembradío" la skill se activó sola, preguntó seis decisiones pendientes y no redactó la spec antes de las respuestas. |
+| escribir-plan | Pedir un plan a partir de la spec sin nombrar la skill. | Pasó. | Con la spec de reservas ya cerrada la skill se activó sola, revalidó su cobertura y señaló la tarea 1 como primera ejecutable. |
+| ejecutar-plan | Criterio de persistencia no comprobable en este entorno. | Pasó. | Verdictó **No verificable** (9/9 escenarios simulados) en lugar de declarar éxito sin comprobar el `localStorage` real del navegador. |
+| Verificación manual | Reservar, bloquear y recargar en Chrome real. | Pasó. | Sin nombre no reserva; "Ana" deja la celda reservada y bloqueada (segundo clic inmuta); al recargar la celda continúa reservada. |
 
 ## Guion de demo
 
@@ -48,4 +49,4 @@ Las skills auxiliares `validar-resultado` y `auditar-contexto` complementan el h
 
 ## Lo que no se alcanzó a hacer
 
-La cancelación está intencionalmente fuera del ciclo. Las tres pruebas de activación y la comprobación manual de reservar, bloquear y recargar deben ejecutarse y registrar su resultado real en OpenCode/navegador antes de presentar; no se deben marcar como aprobadas sin evidencia.
+La cancelación está intencionalmente fuera del ciclo. Todas las pruebas de la cadena y la comprobación manual de reservar, bloquear y recargar ya se ejecutaron y registraron su resultado real (ver tabla anterior).
